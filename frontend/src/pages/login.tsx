@@ -18,11 +18,11 @@ const supabase = createClient(
 );
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [isSigningUp, setIsSigningUp] = useState<boolean>(false);
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSigningUp, setIsSigningUp] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -58,6 +58,18 @@ const LoginPage = () => {
           navigate('/'); // Redirect to homepage if role and username exist
         }
       }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'localhost:3000/reset-password', // Replace with your reset password page URL
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      alert('Password reset email sent!');
     }
   };
 
@@ -110,7 +122,7 @@ const LoginPage = () => {
 
             {/* Forgot Password */}
             <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 1 }}>
-              <Button onClick={() => navigate("/forgot-password")} size="small">
+              <Button onClick={handleForgotPassword} size="small">
                 Forgot Password?
               </Button>
             </Box>
@@ -119,18 +131,17 @@ const LoginPage = () => {
             <Button type="submit" variant="contained" fullWidth sx={{ mt: 1 }}>
               Login
             </Button>
-
-            {/* Sign Up Button (Bottom Right) */}
-            
           </form>
         </CardContent>
       </Card>
+
+      {/* Sign Up Button (Bottom Right) */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mt: 3 }}>
         <Typography variant="body2" sx={{ fontSize: "0.950rem", mr: 1 }}>
-            New to Break Free?
+          New to BreakFree?
         </Typography>
         <Button onClick={() => navigate("/register")} size="small" sx={{ fontSize: "0.875rem" }}>
-            Sign Up
+          Sign Up
         </Button>
       </Box>
     </Container>
@@ -138,4 +149,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
