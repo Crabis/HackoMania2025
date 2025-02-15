@@ -92,14 +92,22 @@ export default function MenuDrawer() {
   ];
 
   const warriorMenu = [
+    { label: "Register a Buddy", path: "/register-a-buddy"},
+    { label: "Volunteer to be a Sponsor", path: "/volunteer-as-sponsor"},
     { label: "Warrior Home", path: "/warrior-home" },
-    { label: "My Progress", path: "/my-progress" },
+    // { label: "My Progress", path: "/my-progress" },
+  ];
+
+  const buddyMenu = [
+    { label: "Register a Warrior Buddy", path: "/register-warrior-buddy "},
+    { label: "Your Warrior's Home", path: "/attached-warrior-home"}
   ];
 
   // Select menu based on user role (case-insensitive check)
   let roleSpecificMenu = [];
   if (userRole?.toLowerCase() === "mentor") roleSpecificMenu = mentorMenu;
   else if (userRole?.toLowerCase() === "guardian") roleSpecificMenu = guardianMenu;
+  else if (userRole?.toLowerCase() === "buddy") roleSpecificMenu = buddyMenu;
   else roleSpecificMenu = warriorMenu; // Default to Warrior
 
   return (
