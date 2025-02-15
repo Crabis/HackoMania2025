@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home"; // ✅ Import Home page
 import RegisterPage from "./pages/register"; // ✅ Import Register page
 import LoginPage from "./pages/login"; // ✅ Import Login page
-import ChooseRolePage from "./pages/chooserole"; // ✅ Import Choose Role page
+import ProfilePage from "./pages/profile"; // ✅ Import Choose Role page
 
 const App: React.FC = () => {
   return (
@@ -14,7 +14,7 @@ const App: React.FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/choose-role" element={<ChooseRolePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>

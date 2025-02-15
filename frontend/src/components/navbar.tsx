@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Drawer,
   List,
@@ -17,6 +15,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { Link } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client
+const supabase = createClient("https://qagsbbilljqjmauhylgo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU");
 
 const menuOptions = [
   { label: "Home", path: "/" },
@@ -27,9 +29,32 @@ const menuOptions = [
 
 export default function MenuDrawer() {
   const [open, setOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
 
+  // Toggle Drawer
   const toggleDrawer = (state: boolean) => () => {
     setOpen(state);
+  };
+
+  // Fetch user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+    };
+
+    fetchUser();
+  }, []);
+
+  // Logout function
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error signing out:", error.message);
+    } else {
+      setUser(null); // Clear user state
+      window.location.reload(); 
+    }
   };
 
   return (
@@ -67,19 +92,21 @@ export default function MenuDrawer() {
               </>
             ))}
           </List>
-          
-          {/* Logout Button */}
-          <Box sx={{ mt: "auto", p: 2 }}>
-            <ListItemButton
-              sx={{ color: "red", '&:hover': { backgroundColor: "#ffebee" }, cursor: "pointer", p: 2 }}
-            >
-              <ExitToAppIcon sx={{ color: "red", mr: 1 }} />
-              <ListItemText primary="Logout" />
-            </ListItemButton>
-          </Box>
+
+          {/* Logout Button - Only show if user is logged in */}
+          {user && (
+            <Box sx={{ mt: "auto", p: 2 }}>
+              <ListItemButton
+                sx={{ color: "red", '&:hover': { backgroundColor: "#ffebee" }, cursor: "pointer", p: 2 }}
+                onClick={handleLogout}
+              >
+                <ExitToAppIcon sx={{ color: "red", mr: 1 }} />
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </Box>
+          )}
         </Box>
       </Drawer>
     </>
   );
 }
-

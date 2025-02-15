@@ -1,15 +1,17 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AppBar, Toolbar, IconButton, Typography, Box, ThemeProvider, CssBaseline, Button } from "@mui/material"
 import MenuIcon from "@mui/icons-material/Menu"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import { createTheme } from "@mui/material/styles"
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { TestimonialCard } from "../components/TestimonialCard"
 import { DonationCard } from "../components/DonationCard"
-import { type AddictionTab, addictionsTabData } from "../constants/constants" // refer to this for modular code 
-import  MenuDrawer  from "../components/navbar"
+import { type AddictionTab, addictionsTabData } from "../constants/constants"
+import MenuDrawer from "../components/navbar"
+import { createClient } from "@supabase/supabase-js"
+
+// Initialize Supabase client
+const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU');
 
 const theme = createTheme({
   palette: {
@@ -24,19 +26,29 @@ const theme = createTheme({
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0)
+  const [user, setUser] = useState<any>(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      setUser(data?.user)
+    }
+    
+    fetchUser()
+  }, [])
 
   const renderTabContent = (tab: AddictionTab) => (
     <>
       <DonationCard
-    value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{`$${tab.donation_amount.toFixed(2)}`}</Typography>}
-    label="Total Donation Pool"
-    />
+        value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{`$${tab.donation_amount.toFixed(2)}`}</Typography>}
+        label="Total Donation Pool"
+      />
 
-    <DonationCard
-    value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{tab.number}</Typography>}
-    label="Warriors on our Program"
-    />
-
+      <DonationCard
+        value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{tab.number}</Typography>}
+        label="Warriors on our Program"
+      />
 
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
@@ -69,9 +81,8 @@ export default function HomePage() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* App Bar remains white, content selection stays above the background */}
       <AppBar position="static" color="transparent" elevation={0}>
-        <Toolbar sx={{ mb: 1 }}> {/* Reduces gap between App Bar and content */}
+        <Toolbar sx={{ mb: 1 }}>
           <IconButton edge="start" color="inherit" aria-label="menu">
             <MenuDrawer />
           </IconButton>
@@ -79,25 +90,42 @@ export default function HomePage() {
             Recovery Warriors
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Button
-              color="inherit"
-              size="small"
-              sx={{ mr: 0 }}
-              component={Link} // Use the 'Link' component for navigation
-              to="/login" // Navigate to the '/login' route
-            >
-              Login
-            </Button>
-            <IconButton color="inherit">
-              <AccountCircleIcon />
-            </IconButton>
+            {!user ? (
+              <>
+                <Button
+                  color="inherit"
+                  size="small"
+                  sx={{ mr: 1 }}
+                  component={Link}
+                  to="/login"
+                >
+                  Login
+                </Button>
+                <Button
+                  color="inherit"
+                  size="small"
+                  sx={{ mr: 0 }}
+                  component={Link}
+                  to="/register"
+                >
+                  Register
+                </Button>
+              </>
+            ) : (
+              <Typography color="inherit" sx={{ mr: 2 }}>
+                {user.username}
+              </Typography>
+            )}
+            {user && (
+              <IconButton color="inherit" component={Link} to="/profile">
+                <AccountCircleIcon />
+              </IconButton>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Content selection bar */}
       <Box sx={{ px: 3, py: 0, backgroundColor: "#fff" }}>
-        {/* Tabs */}
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 1 }}>
           {addictionsTabData.map((tab, index) => (
             <Box
@@ -119,7 +147,6 @@ export default function HomePage() {
         </Box>
       </Box>
 
-      {/* Background image starts below the content selection bar */}
       <Box
         sx={{
           flexGrow: 1,
@@ -131,7 +158,7 @@ export default function HomePage() {
           backgroundRepeat: "no-repeat",
           backgroundAttachment: "scroll",
           color: "#fff",
-          px: 3, // Adds padding around the content in front of the image
+          px: 3,
           py: 2,
         }}
       >
@@ -140,4 +167,3 @@ export default function HomePage() {
     </ThemeProvider>
   )
 }
-
