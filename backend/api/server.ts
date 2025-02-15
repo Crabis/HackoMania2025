@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from 'cors';
 import {
   createAuthenticatedClient,
   OpenPaymentsClientError,
@@ -10,17 +11,30 @@ import {
 } from "@interledger/open-payments";
 
 const app = express();
+
+// Configure CORS
+app.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Enable credentials (if needed)
+}));
+
 app.use(express.json());
 
+// Add health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4";
 const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf";
-const PRIVATE_KEY_PATH = "/home/crabis/HackoMania2025/HackoMania2025/backend/private.key";
+const PRIVATE_KEY_PATH = "/Users/justintimo/HackoMania2025/backend/private.key";
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
 let client: any;
 
-// ✅ Initialize the authenticated client
+// Initialize the authenticated client
 (async () => {
   try {
     client = await createAuthenticatedClient({
@@ -28,111 +42,115 @@ let client: any;
       privateKey: PRIVATE_KEY_PATH,
       keyId: KEY_ID,
     });
-    console.log("Client initialized successfully");
+    console.log("✅ Client initialized successfully");
   } catch (error) {
-    console.error("Error initializing client:", error);
+    console.error("🚨 Error initializing client:", error);
   }
 })();
 
-// ✅ GET Wallets - Fix async issue
+// GET Wallets
 app.get("/wallets", async (req: Request, res: Response): Promise<void> => {
   try {
-      const sendingWalletAddress = await client.walletAddress.get({
-        url: SENDER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $)
-      });
-      const receivingWalletAddress = await client.walletAddress.get({
-        url: RECEIVER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $)
-      });
+    console.log("📨 Fetching wallet addresses...");
+    const sendingWalletAddress = await client.walletAddress.get({
+      url: SENDER_WALLET_ADDRESS,
+    });
+    const receivingWalletAddress = await client.walletAddress.get({
+      url: RECEIVER_WALLET_ADDRESS,
+    });
     
+    console.log("✅ Wallet addresses fetched successfully");
     res.json({ sendingWalletAddress, receivingWalletAddress });
   } catch (error) {
+    console.error("🚨 Error fetching wallets:", error);
     res.status(500).json({ error: (error as Error).message || "Unexpected error occurred" });
   }
 });
 
-// ✅ POST Incoming Payment
+// POST Incoming Payment
 app.post("/incoming-payment", async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log("📨 Creating incoming payment...");
     const receivingWalletAddress = await client.walletAddress.get({
-        url: RECEIVER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $)
-      });
+      url: RECEIVER_WALLET_ADDRESS,
+    });
+    
     const incomingPaymentGrant = await client.grant.request(
+      {
+        url: receivingWalletAddress.authServer,
+      },
+      {
+        access_token: {
+          access: [
+            {
+              type: "incoming-payment",
+              actions: ["read", "complete", "create"],
+            },
+          ],
+        },
+      }
+    );
+    
+    if (isFinalizedGrant(incomingPaymentGrant)) {
+      console.log("✅ Incoming payment grant received");
+      
+      const incomingPayment = await client.incomingPayment.create(
         {
-          url: receivingWalletAddress.authServer,
+          url: receivingWalletAddress.resourceServer,
+          accessToken: incomingPaymentGrant.access_token.value,
         },
         {
-          access_token: {
-            access: [
-              {
-                type: "incoming-payment",
-                actions: ["read", "complete", "create"],
-              },
-            ],
+          walletAddress: receivingWalletAddress.id,
+          incomingAmount: {
+            assetCode: receivingWalletAddress.assetCode,
+            assetScale: receivingWalletAddress.assetScale,
+            value: "1000",
           },
         }
       );
       
-      // FIX: Ensure the grant is finalized before accessing access_token
-      if (isFinalizedGrant(incomingPaymentGrant)) {
-        console.log(
-          "\nStep 1: got incoming payment grant for receiving wallet address",
-          incomingPaymentGrant
-        );
-      
-        const incomingPayment = await client.incomingPayment.create(
-          {
-            url: receivingWalletAddress.resourceServer,
-            accessToken: incomingPaymentGrant.access_token.value, // ✅ No more errors!
-          },
-          {
-            walletAddress: receivingWalletAddress.id,
-            incomingAmount: {
-              assetCode: receivingWalletAddress.assetCode,
-              assetScale: receivingWalletAddress.assetScale,
-              value: "1000",
-            },
-          }
-        );
-        
-    res.json(incomingPayment);
-  }} catch (error) {
+      console.log("✅ Incoming payment created successfully");
+      res.json(incomingPayment);
+    }
+  } catch (error) {
+    console.error("🚨 Error creating incoming payment:", error);
     res.status(500).json({ error: (error as Error).message || "Unexpected error occurred" });
   }
 });
 
-// ✅ POST Create a Quote
+// POST Create a Quote
 app.post("/quote", async (req: Request, res: Response): Promise<void> => {
   try {
-     const { amount } = req.body;
+    const { amount } = req.body;
+    console.log("📨 Creating quote for amount:", amount);
+
     const sendingWalletAddress = await client.walletAddress.get({
-        url: SENDER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $)
+      url: SENDER_WALLET_ADDRESS,
     });
     const receivingWalletAddress = await client.walletAddress.get({
-    url: RECEIVER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $)
+      url: RECEIVER_WALLET_ADDRESS,
     });
+
     const incomingPaymentGrant = await client.grant.request(
-        {
-          url: receivingWalletAddress.authServer,
+      {
+        url: receivingWalletAddress.authServer,
+      },
+      {
+        access_token: {
+          access: [
+            {
+              type: "incoming-payment",
+              actions: ["read", "complete", "create"],
+            },
+          ],
         },
-        {
-          access_token: {
-            access: [
-              {
-                type: "incoming-payment",
-                actions: ["read", "complete", "create"],
-              },
-            ],
-          },
-        }
-      );
-      
-      // FIX: Ensure the grant is finalized before accessing access_token
-    if (isFinalizedGrant(incomingPaymentGrant)) {
-    console.log(
-        "\nStep 1: got incoming payment grant for receiving wallet address",
-        incomingPaymentGrant
+      }
     );
-    const incomingPayment = await client.incomingPayment.create(
+    
+    if (isFinalizedGrant(incomingPaymentGrant)) {
+      console.log("✅ Incoming payment grant received");
+
+      const incomingPayment = await client.incomingPayment.create(
         {
           url: receivingWalletAddress.resourceServer,
           accessToken: incomingPaymentGrant.access_token.value
@@ -142,11 +160,12 @@ app.post("/quote", async (req: Request, res: Response): Promise<void> => {
           incomingAmount: {
             assetCode: receivingWalletAddress.assetCode,
             assetScale: receivingWalletAddress.assetScale,
-            value: String(amount) // ✅ Use dynamic amount from frontend
+            value: String(amount)
           }
         }
       );
-    const quoteGrant = await client.grant.request(
+
+      const quoteGrant = await client.grant.request(
         {
           url: sendingWalletAddress.authServer,
         },
@@ -163,12 +182,12 @@ app.post("/quote", async (req: Request, res: Response): Promise<void> => {
       );
       
       if (isFinalizedGrant(quoteGrant)) {
-        console.log("\nStep 3: got quote grant on sending wallet address", quoteGrant);
+        console.log("✅ Quote grant received");
       
         const quote = await client.quote.create(
           {
             url: sendingWalletAddress.resourceServer,
-            accessToken: quoteGrant.access_token.value, // ✅ No error
+            accessToken: quoteGrant.access_token.value,
           },
           {
             walletAddress: sendingWalletAddress.id,
@@ -177,139 +196,153 @@ app.post("/quote", async (req: Request, res: Response): Promise<void> => {
           }
         );
         
+        console.log("✅ Quote created successfully:", quote);
         res.json(quote);
-        console.log("\nStep 4: got quote on sending wallet address", quote);
-  }}} catch (error) {
+      }
+    }
+  } catch (error) {
+    console.error("🚨 Error creating quote:", error);
     res.status(500).json({ error: (error as Error).message || "Unexpected error occurred" });
   }
 });
+
 const pendingGrants: Record<string, { continueUri: string; accessToken: string; quoteId: string }> = {};
-// ✅ POST Outgoing Payment Grant
+
+// POST Outgoing Payment Grant
 app.post("/outgoing-payment", async (req: Request, res: Response): Promise<void> => {
-//   try {
+  try {
+    console.log("📨 Creating outgoing payment...");
+    console.log("Request body:", req.body);
+
     const sendingWalletAddress: WalletAddress = await client.walletAddress.get({ url: SENDER_WALLET_ADDRESS });
     const quote: Quote = req.body.quote;
 
     const outgoingPaymentGrant = await client.grant.request(
-        {
-          url: sendingWalletAddress.authServer,
-        },
-        {
-          access_token: {
-            access: [
-              {
-                type: "outgoing-payment",
-                actions: ["read", "create"],
-                limits: {
-                  debitAmount: {
-                    assetCode: quote.debitAmount.assetCode,
-                    assetScale: quote.debitAmount.assetScale,
-                    value: quote.debitAmount.value,
-                  },
+      {
+        url: sendingWalletAddress.authServer,
+      },
+      {
+        access_token: {
+          access: [
+            {
+              type: "outgoing-payment",
+              actions: ["read", "create"],
+              limits: {
+                debitAmount: {
+                  assetCode: quote.debitAmount.assetCode,
+                  assetScale: quote.debitAmount.assetScale,
+                  value: quote.debitAmount.value,
                 },
-                identifier: sendingWalletAddress.id,
               },
-            ],
-          },
-          interact: {
-            start: ["redirect"],
-          },
-        }
-      );
-      
-      if (!isFinalizedGrant(outgoingPaymentGrant)) {
-        console.log(
-          "Please navigate to the following URL to accept the interaction from the sending wallet:"
-        );
-        console.log(outgoingPaymentGrant.interact.redirect);
-        console.log("🔹 Received quote in request body:", quote);
-        console.log("🔹 Storing quoteId:", quote?.id);
+              identifier: sendingWalletAddress.id,
+            },
+          ],
+        },
+        interact: {
+          start: ["redirect"],
+        },
+      }
+    );
+    
+    if (!isFinalizedGrant(outgoingPaymentGrant)) {
+      console.log("✅ Payment grant created, storing details");
+      console.log("🔗 Redirect URL:", outgoingPaymentGrant.interact.redirect);
 
-        pendingGrants[sendingWalletAddress.id] = {
-            continueUri: outgoingPaymentGrant.continue.uri,
-            accessToken: outgoingPaymentGrant.continue.access_token.value,
-            quoteId: quote.id, // ✅ Store quote ID for later use
-        };
-      } 
-      
-      console.log("🔹 Storing grant for wallet:", sendingWalletAddress.id);
-        console.log("🔹 Grant Data:", {
+      pendingGrants[sendingWalletAddress.id] = {
         continueUri: outgoingPaymentGrant.continue.uri,
         accessToken: outgoingPaymentGrant.continue.access_token.value,
-        quoteID: pendingGrants.quoteId
-            });
+        quoteId: quote.id,
+      };
+      
+      console.log("✅ Grant stored for wallet:", sendingWalletAddress.id);
+    }
 
-      res.json(outgoingPaymentGrant);
-    
-    })
-
-app.post("/finish-payment", async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { walletId } = req.body;
-    
-            if (!walletId) {
-                res.status(400).json({ error: "Wallet ID is required" });
-                return;
-            }
-    
-            if (!pendingGrants[walletId]) {
-                console.log("🚨 No pending grant found for wallet:", walletId);
-                res.status(400).json({ error: "No pending grant found for this wallet." });
-                return;
-            }
-    
-            const grantData = pendingGrants[walletId];
-            delete pendingGrants[walletId]; // Remove the stored grant after use
-    
-            console.log("✅ Found grant for wallet:", walletId);
-            console.log("✅ Continuing grant process...");
-    
-            // ✅ Continue the grant process
-            const finalizedOutgoingPaymentGrant = await client.grant.continue({
-                url: grantData.continueUri,
-                accessToken: grantData.accessToken,
-            });
-    
-            if (!isFinalizedGrant(finalizedOutgoingPaymentGrant)) {
-                console.log("🚨 Grant approval incomplete.");
-                res.status(400).json({
-                    error: "Grant approval incomplete. Please try again after accepting the grant.",
-                });
-                return;
-            }
-    
-            console.log("✅ Outgoing Payment Grant Approved:", finalizedOutgoingPaymentGrant);
-    
-            // ✅ Retrieve the sending wallet address
-            const sendingWalletAddress: WalletAddress = await client.walletAddress.get({ url: SENDER_WALLET_ADDRESS });
-    
-            // ✅ Create the outgoing payment (Fixing incorrect `quoteId` retrieval)
-            const outgoingPayment = await client.outgoingPayment.create(
-                {
-                    url: sendingWalletAddress.resourceServer,
-                    accessToken: finalizedOutgoingPaymentGrant.access_token.value,
-                },
-                {
-                    walletAddress: sendingWalletAddress.id,
-                    quoteId: grantData.quoteId,
-                }
-            );
-    
-            console.log("✅ Payment successfully created:", outgoingPayment);
-            res.json({ message: "Payment sent successfully", outgoingPayment });
-    
-        } catch (error) {
-            console.log("🚨 Error in finish-payment:", error);
-            res.status(500).json({ error: (error as Error).message || "Unexpected error occurred" });
-        }
-    });
-    
-    
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    res.json(outgoingPaymentGrant);
+  } catch (error) {
+    console.error("🚨 Error in outgoing payment:", error);
+    res.status(500).json({ error: (error as Error).message || "Unexpected error occurred" });
+  }
 });
 
+// POST Finish Payment
+app.post("/finish-payment", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { walletId, quoteId } = req.body;
+    console.log("📨 Finishing payment for wallet:", walletId);
 
+    if (!walletId || !quoteId) {
+      throw new Error("Wallet ID and Quote ID are required");
+    }
 
+    const grantData = pendingGrants[walletId];
+    if (!grantData) {
+      console.log("🚨 No pending grant found for wallet:", walletId);
+      throw new Error("No pending grant found for this wallet");
+    }
 
+    // Verify quote ID matches
+    if (grantData.quoteId !== quoteId) {
+      throw new Error("Quote ID mismatch");
+    }
+
+    console.log("✅ Found grant data, continuing process");
+
+    const finalizedOutgoingPaymentGrant = await client.grant.continue({
+      url: grantData.continueUri,
+      accessToken: grantData.accessToken,
+    });
+
+    if (!isFinalizedGrant(finalizedOutgoingPaymentGrant)) {
+      throw new Error("Grant approval incomplete. Please try again after accepting the grant.");
+    }
+
+    console.log("✅ Grant finalized successfully");
+
+    const sendingWalletAddress: WalletAddress = await client.walletAddress.get({ 
+      url: SENDER_WALLET_ADDRESS 
+    });
+
+    const outgoingPayment = await client.outgoingPayment.create(
+      {
+        url: sendingWalletAddress.resourceServer,
+        accessToken: finalizedOutgoingPaymentGrant.access_token.value,
+      },
+      {
+        walletAddress: sendingWalletAddress.id,
+        quoteId: grantData.quoteId,
+      }
+    );
+
+    // Clean up the pending grant after successful payment
+    delete pendingGrants[walletId];
+
+    console.log("✅ Payment completed successfully");
+    res.json({ 
+      message: "Payment sent successfully", 
+      outgoingPayment,
+      success: true 
+    });
+
+  } catch (error) {
+    console.error("🚨 Error in finish-payment:", error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Unexpected error occurred",
+      success: false
+    });
+  }
+});
+
+// Error handling middleware
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('🚨 Unhandled error:', err);
+  res.status(500).json({ 
+    error: err.message || 'Internal Server Error',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔒 CORS enabled for frontend at http://localhost:3000`);
+});
