@@ -1,80 +1,212 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent, LinearProgress, TextField } from '@mui/material';
-import MenuDrawer from "../components/navbar"
-import supabase from '../services/supabaseClient'; // Ensure correct Supabase import
+import MenuDrawer from "../components/navbar";
+import supabase from '../services/supabaseClient';
 import Logo from "frontend/public/images/logo.png";
 
+// Define valid addiction types as an enum
+enum AddictType {
+  ALCOHOL = 'alcohol',
+  DRUGS = 'drugs',
+  SMOKING = 'smoking'
+}
+
+interface Warrior {
+  addict_id?: number;
+  uuid: string;
+  addict_type: AddictType;
+  days_clean: number;
+  goal_weeks: number;
+  username: string;
+  timestamp: string;
+}
+
+interface UserData {
+  username: string | null;
+  role: string | null;
+}
+
 const WarriorHomePage = () => {
-  const [user, setUser] = useState<any>(null);
-  const [warriorData, setWarriorData] = useState<any[]>([]);
-  const [goal, setGoal] = useState<number>(20); // Default goal is 20 weeks if column in supabase is empty
+  const [warriorData, setWarriorData] = useState<Warrior[]>([]);
+  const [goal, setGoal] = useState<number>(20);
+  const [username, setUsername] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user);
+    const fetchUserAndData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          throw new Error('No authenticated user');
+        }
 
-      if (data?.user) {
-        console.log('Fetched User ID:', data.user.id);
-        const { data: warriorRecords, error } = await supabase
+        // Fetch user data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('username, role')
+          .eq('id', user.id)
+          .single();
+
+        if (userError) throw userError;
+        
+        if (userData?.username) {
+          setUsername(userData.username);
+        }
+
+        // Fetch warrior data
+        const { data: warriorRecords, error: warriorError } = await supabase
           .from('warriors')
-          .select('addict_type, days_clean, goal_weeks')
-          .eq('uuid', data.user.id);
+          .select('*')
+          .eq('uuid', user.id);
 
-        if (error) {
-          console.error(error);
-        } else {
-          setWarriorData(warriorRecords || []);
-          if (warriorRecords?.length > 0) {
-            setGoal(warriorRecords[0]?.goal_weeks || 20);
+        if (warriorError) throw warriorError;
+
+        if (warriorRecords) {
+          setWarriorData(warriorRecords);
+          if (warriorRecords.length > 0) {
+            setGoal(warriorRecords[0].goal_weeks);
           }
         }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load user data. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUser();
+    fetchUserAndData();
   }, []);
 
-  const handleAddictTypeChange = async (newAddictType: string) => {
-    if (user) {
-      const { error } = await supabase
-        .from('warriors')
-        .upsert({
-          uuid: user.id,
-          addict_type: newAddictType,
-          days_clean: 0,
-          goal_weeks: goal,
-        });
-
-      if (error) {
-        console.error('Error adding new addiction type:', error);
-      } else {
-        const { data: updatedWarriorRecords } = await supabase
-          .from('warriors')
-          .select('addict_type, days_clean, goal_weeks')
-          .eq('uuid', user.id);
-
-        console.log('Updated warrior data:', updatedWarriorRecords);
-        setWarriorData(updatedWarriorRecords || []);
+  const handleAddictTypeChange = async (newAddictType: AddictType) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('User not authenticated');
       }
+
+      // Get current username
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      const currentUsername = userData?.username || '';
+
+      // Check for existing record
+      const { data: existingWarrior, error: checkError } = await supabase
+        .from('warriors')
+        .select('*')
+        .eq('uuid', user.id)
+        .eq('addict_type', newAddictType)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // Not found error is ok
+        throw checkError;
+      }
+
+      const warriorData: Warrior = {
+        uuid: user.id,
+        addict_type: newAddictType,
+        days_clean: 0,
+        goal_weeks: goal,
+        username: currentUsername,
+        timestamp: new Date().toISOString()
+      };
+
+      let error;
+      if (existingWarrior) {
+        const { error: updateError } = await supabase
+          .from('warriors')
+          .update(warriorData)
+          .eq('addict_id', existingWarrior.addict_id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('warriors')
+          .insert([warriorData]);
+        error = insertError;
+      }
+
+      if (error) throw error;
+
+      // Refresh warrior data
+      const { data: updatedRecords, error: fetchError } = await supabase
+        .from('warriors')
+        .select('*')
+        .eq('uuid', user.id);
+
+      if (fetchError) throw fetchError;
+      
+      if (updatedRecords) {
+        setWarriorData(updatedRecords);
+      }
+    } catch (error) {
+      console.error('Error updating addiction:', error);
+      setError('Failed to update addiction data. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newGoal = Number(event.target.value);
-    setGoal(newGoal);
+    if (newGoal > 0) {
+      setGoal(newGoal);
+    }
   };
+
+  const handleRemoveGoal = async (addictType: AddictType) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('warriors')
+        .delete()
+        .match({ addict_type: addictType });
+      
+      if (error) throw error;
+
+      // Update the UI by filtering out the removed goal
+      setWarriorData((prevData) => prevData.filter((warrior) => warrior.addict_type !== addictType));
+    } catch (error) {
+      console.error('Error removing goal:', error);
+      setError('Failed to remove addiction goal. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <LinearProgress sx={{ width: '80%', maxWidth: '400px' }} />
+      </Box>
+    );
+  }
 
   return (
     <>
-      {/* Top Navigation Bar with MenuDrawer, Logo & Title */}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
         padding: 2, 
-        position: 'absolute', // Ensure it's at the top left
+        position: 'absolute',
         top: 0,
         left: 0
       }}>
@@ -85,17 +217,24 @@ const WarriorHomePage = () => {
         </Typography>
       </Box>
 
-      {/* Main Content */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 10, px: 3 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
-          Welcome, Warrior! 🏆
+          Welcome, {username || 'Warrior'}! 🏆
         </Typography>
 
         <Typography variant="body1" sx={{ textAlign: 'center', mb: 3, color: 'gray' }}>
           Every step forward is a victory! Keep going! 🚀
         </Typography>
 
-        {/* Goal Setting */}
+        {error && (
+          <Card sx={{ mb: 3, width: '100%', maxWidth: '500px', p: 2, bgcolor: '#ffebee' }}>
+            <CardContent>
+              <Typography color="error">{error}</Typography>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Personal Goal Setting */}
         <Card sx={{ mb: 3, width: '100%', maxWidth: '500px', p: 2 }}>
           <CardContent>
             <Typography variant="h6">Set Your Personal Goal</Typography>
@@ -107,17 +246,41 @@ const WarriorHomePage = () => {
               fullWidth
               variant="outlined"
               sx={{ mt: 2 }}
+              inputProps={{ min: 1 }}
             />
           </CardContent>
         </Card>
 
-        {/* Progress Bars for Addictions */}
+        {/* Add New Addiction Type */}
+        <Card sx={{ mb: 3, width: '100%', maxWidth: '500px', p: 2 }}>
+          <CardContent>
+            <Typography variant="h6">Add New Addiction Type</Typography>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mt: 2 }}>
+              {[AddictType.ALCOHOL, AddictType.DRUGS, AddictType.SMOKING]
+                .filter((type) => !warriorData.some((warrior) => warrior.addict_type === type))
+                .map((type) => (
+                  <Button
+                    key={type}
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    onClick={() => handleAddictTypeChange(type)}
+                    disabled={loading}
+                  >
+                    Set as {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Button>
+                ))}
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Addiction Progress Cards */}
         {warriorData.length === 0 ? (
           <Typography variant="body1" sx={{ mt: 3 }}>No addiction data available.</Typography>
         ) : (
           warriorData.map((warrior, index) => {
             const weeksClean = Math.floor(warrior.days_clean / 7);
-            const progress = Math.min((weeksClean / goal) * 100, 100); // Prevents exceeding 100%
+            const progress = Math.min((weeksClean / goal) * 100, 100);
             return (
               <Card key={index} sx={{ mb: 3, width: '100%', maxWidth: '500px', p: 2 }}>
                 <CardContent>
@@ -133,44 +296,20 @@ const WarriorHomePage = () => {
                   <Typography variant="body2" sx={{ mt: 1, color: progress === 100 ? 'green' : 'blue' }}>
                     {progress === 100 ? '🎉 You reached your goal! Keep pushing forward! 🎉' : 'Stay strong, every day counts!'}
                   </Typography>
+                  <Button 
+                    variant="contained" 
+                    color="secondary" 
+                    sx={{ mt: 2 }}
+                    onClick={() => handleRemoveGoal(warrior.addict_type)}
+                    disabled={loading}
+                  >
+                    Remove Goal
+                  </Button>
                 </CardContent>
               </Card>
             );
           })
         )}
-
-        {/* Add New Addiction Type */}
-        <Card sx={{ mb: 3, width: '100%', maxWidth: '500px', p: 2 }}>
-          <CardContent>
-            <Typography variant="h6">Add New Addiction Type</Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ flex: 1, mx: 0.5 }}
-                onClick={() => handleAddictTypeChange('Alcohol')}
-              >
-                Set as Alcohol
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ flex: 1, mx: 0.5 }}
-                onClick={() => handleAddictTypeChange('Drugs')}
-              >
-                Set as Drugs
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ flex: 1, mx: 0.5 }}
-                onClick={() => handleAddictTypeChange('Smoking')}
-              >
-                Set as Smoking
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
       </Box>
     </>
   );
