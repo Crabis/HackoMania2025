@@ -69,9 +69,10 @@ export default function MenuDrawer() {
     } else {
       setUser(null);
       setUserRole(null);
-      window.location.reload();
+      window.location.href = "/"; // Redirect to home page
     }
   };
+  
 
   // Default menu options (visible to all)
   const commonMenuOptions = [
