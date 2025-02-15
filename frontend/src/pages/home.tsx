@@ -15,6 +15,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import { createTheme } from "@mui/material/styles"
+import { addictionsTabData } from "@/constants/constants"
 
 const theme = createTheme({
   palette: {
@@ -65,11 +66,11 @@ export default function Page() {
           </Toolbar>
         </AppBar>
 
-        {/* Main Content */}
+        {/* Main Content mapped for each addiction */}
         <Box sx={{ px: 2, py: 3 }}>
           {/* Tabs */}
           <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 2 }}>
-            {tabData.map((tab, index) => (
+            {addictionsTabData.map((tab, index) => (
               <Box
                 key={index}
                 onClick={() => setActiveTab(index)}
