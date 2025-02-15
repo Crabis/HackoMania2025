@@ -22,13 +22,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  Avatar
 } from "@mui/material"
 import MenuIcon from "@mui/icons-material/Menu"
+import { Link } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import InfoIcon from "@mui/icons-material/Info"
 import { createTheme } from "@mui/material/styles"
 import supabase from '../services/supabaseClient'
+import Logo from "frontend/public/images/logo.png";
+import MenuDrawer from "../components/navbar";
 
 const API_BASE_URL = 'http://localhost:3001';
 
@@ -106,6 +110,36 @@ const GuardianPanel = () => {
     redirectUrl: null,
     walletId: null
   });
+  const [user, setUser] = useState<any>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<string>('');
+  
+    useEffect(() => {
+      const fetchUser = async () => {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+  
+        if (authError || !authData?.user) {
+          setUser(null);
+          return;
+        }
+  
+        setUser(authData.user);
+  
+        // ✅ Fetch additional user details (username) from the "users" table
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("username")
+          .eq("id", authData.user.id)
+          .single();
+  
+        if (!userError && userData?.username) {
+          setUsername(userData.username);
+        }
+      };
+  
+      fetchUser();
+    }, []);
+
   useEffect(() => {
   // Listen for auth changes
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -210,7 +244,7 @@ const getQuote = async (amount: string): Promise<Quote> => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ amount: amountInCents.toString() }),
+        body: JSON.stringify({ amount: amountInCents.toString(), id: walletId }),
       });
   
       if (!response.ok) {
@@ -240,7 +274,8 @@ const getQuote = async (amount: string): Promise<Quote> => {
         body: JSON.stringify({
           quote: {
             id: quote.id,
-            debitAmount: quote.debitAmount
+            debitAmount: quote.debitAmount,
+            walletId: quote.walletAddress
           }
         }),
       });
@@ -365,7 +400,7 @@ const getQuote = async (amount: string): Promise<Quote> => {
             target_milestone_id: null,
             target_participant_id: null,
             transaction_id: paymentState.quote.id,
-            category: selectedCategory // Add the selected category
+            category: selectedCategory, // Add the selected category
           };
   
         console.log('Attempting Supabase insertion with data:', donationData);
@@ -428,28 +463,33 @@ const getQuote = async (amount: string): Promise<Quote> => {
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static">
-          <Toolbar>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Guardian Donation Panel
-            </Typography>
-            <IconButton color="inherit">
-              <AccountCircleIcon />
-            </IconButton>
+  <CssBaseline />
+  <Box sx={{ flexGrow: 2 }}>
+        <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+          <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            
+            {/* ✅ Left Side - Menu + Logo + Title */}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <MenuDrawer />
+              <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+              <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+                BreakFree
+              </Typography>
+            </Box>
+
+            {/* ✅ Right Side - Username & Profile Icon (Now Shifted Right) */}
+            <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}> 
+              <Typography color="inherit" sx={{ mr: 1 }}>
+                {username || "User"}
+              </Typography>
+              <IconButton component={Link} to="/profile">
+                <Avatar sx={{ bgcolor: "#007BFF" }}>
+                  {username?.[0]?.toUpperCase() || <AccountCircleIcon />}
+                </Avatar>
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
-
         <Container maxWidth="lg" sx={{ mt: 4 }}>
           <Grid container spacing={3}>
             {Object.values(DonationCategory).map((category) => (
@@ -501,6 +541,14 @@ const getQuote = async (amount: string): Promise<Quote> => {
                     value={donationAmount}
                     onChange={(e) => setDonationAmount(e.target.value)}
                     sx={{ mb: 2 }}
+                  />
+                  <TextField
+                  fullWidth
+                  label="Wallet ID"
+                  type="text"
+                  value={walletId}
+                  onChange={(e) => setWalletId(e.target.value)}
+                  sx={{ mb: 2 }}
                   />
 
                   <FormControlLabel
