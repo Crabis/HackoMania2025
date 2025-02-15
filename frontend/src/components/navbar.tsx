@@ -82,8 +82,8 @@ export default function MenuDrawer() {
 
   // Role-specific menus (customize as needed)
   const mentorMenu = [
-    { label: "Mentor Dashboard", path: "/mentor-dashboard" },
-    { label: "Manage Students", path: "/manage-students" },
+    { label: "Mentor Dashboard", path: "/mentor-home" },
+    { label: "View Sessions", path: "/sessions-mentor" },
   ];
 
   const guardianMenu = [

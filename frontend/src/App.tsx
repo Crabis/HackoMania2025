@@ -12,6 +12,10 @@ import RegisterWarrior from "./pages/buddyregisterwarrior";
 import ViewBuddyWarriors from "./pages/yourwarriorhome";
 import WarriorRegisterBuddy from "./pages/warriorregisterbuddy";
 import { View } from "lucide-react";
+import MentorHomePage from "./pages/mentorhome";
+import SessionsMentorPage from "./pages/sessionsmentor";
+import SessionsWarriorPage from "./pages/sessionswarrior";
+
 const App: React.FC = () => {
   return (
     <Router>
@@ -29,7 +33,9 @@ const App: React.FC = () => {
           <Route path="/register-warrior-buddy" element={<RegisterWarrior/>} />
           <Route path="/attached-warrior-home" element={<ViewBuddyWarriors/>} />
           <Route path="/register-a-buddy" element={<WarriorRegisterBuddy/>} />
-
+          <Route path="/mentor-home" element={<MentorHomePage />} />
+          <Route path="/sessions-mentor" element={<SessionsMentorPage />} />
+          <Route path="/sessions-warrior" element={<SessionsWarriorPage />} />
         </Routes>
       </div>
     </Router>

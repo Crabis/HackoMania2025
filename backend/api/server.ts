@@ -29,7 +29,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/{id}";
 const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf";
-const PRIVATE_KEY_PATH = "/home/crabis/HackoMania2025/HackoMania2025/backend/private.key";
+const PRIVATE_KEY_PATH = "/Users/justintimo/HackoMania2025/backend/private.key";
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
 let client: any;
