@@ -5,7 +5,12 @@ import RegisterPage from "./pages/register"; // ✅ Import Register page
 import LoginPage from "./pages/login"; // ✅ Import Login page
 import ProfilePage from "./pages/profile"; // ✅ Import Choose Role page
 import ResetPasswordPage from "./pages/resetpassword";
+<<<<<<< Updated upstream
 import AboutPage from "./pages/about";
+=======
+import WarriorHomePage from "./pages/warriorhome";
+
+>>>>>>> Stashed changes
 const App: React.FC = () => {
   return (
     <Router>
@@ -18,6 +23,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/warrior-home" element={<WarriorHomePage />} />
         </Routes>
       </div>
     </Router>
