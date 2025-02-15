@@ -17,7 +17,7 @@ import readline from "readline/promises";
 
 const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4/"; // qing rong's
 const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf/"; // yx
-const PRIVATE_KEY_PATH = "C:/GitHub/HackoMania2025/backend/private.key" //yx
+const PRIVATE_KEY_PATH = "/home/crabis/HackoMania2025/HackoMania2025/backend/private.key" //yx
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
 (async () => {
@@ -55,11 +55,39 @@ const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
       },
     }
   );
-
-  console.log(
-    "\nStep 1: got incoming payment grant for receiving wallet address",
-    incomingPaymentGrant
-  );
+  
+  // FIX: Ensure the grant is finalized before accessing access_token
+  if (isFinalizedGrant(incomingPaymentGrant)) {
+    console.log(
+      "\nStep 1: got incoming payment grant for receiving wallet address",
+      incomingPaymentGrant
+    );
+  
+    const incomingPayment = await client.incomingPayment.create(
+      {
+        url: receivingWalletAddress.resourceServer,
+        accessToken: incomingPaymentGrant.access_token.value, // ✅ No more errors!
+      },
+      {
+        walletAddress: receivingWalletAddress.id,
+        incomingAmount: {
+          assetCode: receivingWalletAddress.assetCode,
+          assetScale: receivingWalletAddress.assetScale,
+          value: "1000",
+        },
+      }
+    );
+  
+    console.log(
+      "\nStep 2: created incoming payment on receiving wallet address",
+      incomingPayment
+    );
+  } else {
+    console.log("Grant is still pending. Please complete the grant process.");
+    process.exit();
+  }
+  
+  
 
   // Step 2: Create the incoming payment. This will be where funds will be received.
   const incomingPayment = await client.incomingPayment.create(
@@ -98,11 +126,28 @@ const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
       },
     }
   );
-
-  console.log(
-    "\nStep 3: got quote grant on sending wallet address",
-    quoteGrant
-  );
+  
+  if (isFinalizedGrant(quoteGrant)) {
+    console.log("\nStep 3: got quote grant on sending wallet address", quoteGrant);
+  
+    const quote = await client.quote.create(
+      {
+        url: sendingWalletAddress.resourceServer,
+        accessToken: quoteGrant.access_token.value, // ✅ No error
+      },
+      {
+        walletAddress: sendingWalletAddress.id,
+        receiver: incomingPayment.id,
+        method: "ilp",
+      }
+    );
+  
+    console.log("\nStep 4: got quote on sending wallet address", quote);
+  } else {
+    console.log("Quote grant is still pending. Please complete the grant process.");
+    process.exit();
+  }
+  
 
   // Step 4: Create a quote, this gives an indication of how much it will cost to pay into the incoming payment
   const quote = await client.quote.create(
@@ -144,26 +189,23 @@ const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
       },
       interact: {
         start: ["redirect"],
-        // finish: {
-        //   method: "redirect",
-        //   // This is where you can (optionally) redirect a user to after going through interaction.
-        //   // Keep in mind, you will need to parse the interact_ref in the resulting interaction URL,
-        //   // and pass it into the grant continuation request.
-        //   uri: "https://example.com",
-        //   nonce: crypto.randomUUID(),
-        // },
       },
     }
   );
-
-  console.log(
-    "\nStep 5: got pending outgoing payment grant",
-    outgoingPaymentGrant
-  );
+  
+  if (!isFinalizedGrant(outgoingPaymentGrant)) {
+    console.log(
+      "Please navigate to the following URL to accept the interaction from the sending wallet:"
+    );
+    console.log(outgoingPaymentGrant.interact.redirect);
+    process.exit();
+  } 
+  
+  console.log("\nStep 5: got finalized outgoing payment grant", outgoingPaymentGrant);
   console.log(
     "Please navigate to the following URL, to accept the interaction from the sending wallet:"
   );
-  console.log(outgoingPaymentGrant.interact.redirect);
+  // console.log(outgoingPaymentGrant.interact.redirect);
 
   await readline
     .createInterface({ input: process.stdin, output: process.stdout })
