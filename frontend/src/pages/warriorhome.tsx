@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent, LinearProgress, TextField } from '@mui/material';
-import MenuDrawer from "../components/navbar";
+import MenuDrawer from "../components/navbar"
+
 import supabase from '../services/supabaseClient';
 import Logo from "frontend/public/images/logo.png";
 

@@ -8,6 +8,9 @@ import ResetPasswordPage from "./pages/resetpassword";
 import AboutPage from "./pages/about";
 import WarriorHomePage from "./pages/warriorhome";
 import GuardianPanel from "./pages/guardianpage";
+import MentorHomePage from "./pages/mentorhome";
+import SessionsMentorPage from "./pages/sessionsmentor";
+import SessionsWarriorPage from "./pages/sessionswarrior";
 
 const App: React.FC = () => {
   return (
@@ -23,6 +26,9 @@ const App: React.FC = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/warrior-home" element={<WarriorHomePage />} />
           <Route path="/guardian-panel" element={<GuardianPanel />} />
+          <Route path="/mentor-home" element={<MentorHomePage />} />
+          <Route path="/sessions-mentor" element={<SessionsMentorPage />} />
+          <Route path="/sessions-warrior" element={<SessionsWarriorPage />} />
         </Routes>
       </div>
     </Router>
