@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 // Initialize Supabase client
 const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU');
 
-const ChooseRole = () => {
+const ChooseRolePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [username, setUsername] = useState('');
@@ -70,4 +70,4 @@ const ChooseRole = () => {
   );
 };
 
-export default ChooseRole;
+export default ChooseRolePage;

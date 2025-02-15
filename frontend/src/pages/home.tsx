@@ -22,7 +22,7 @@ const theme = createTheme({
   },
 })
 
-export default function Home() {
+export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0)
 
   const renderTabContent = (tab: AddictionTab) => (
