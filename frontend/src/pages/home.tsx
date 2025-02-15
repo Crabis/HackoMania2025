@@ -61,15 +61,6 @@ export default function Page() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "background.default" }}>
-        {/* Status Bar */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1, bgcolor: "white" }}>
-          <Typography variant="body2">9:41</Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {[...Array(3)].map((_, i) => (
-              <Box key={i} sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "black" }} />
-            ))}
-          </Box>
-        </Box>
 
         {/* App Bar */}
         <AppBar position="static" color="transparent" elevation={0}>
