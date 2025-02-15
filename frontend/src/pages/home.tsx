@@ -8,7 +8,7 @@ import { createTheme } from "@mui/material/styles"
 import { Link } from 'react-router-dom';
 import { TestimonialCard } from "../components/TestimonialCard"
 import { DonationCard } from "../components/DonationCard"
-import { type AddictionTab, addictionsTabData } from "../constants/constants"
+import { type AddictionTab, addictionsTabData } from "../constants/constants" // refer to this for modular code 
 
 const theme = createTheme({
   palette: {
@@ -21,7 +21,7 @@ const theme = createTheme({
   },
 })
 
-export default function Page() {
+export default function Home() {
   const [activeTab, setActiveTab] = useState(0)
 
   const renderTabContent = (tab: AddictionTab) => (
