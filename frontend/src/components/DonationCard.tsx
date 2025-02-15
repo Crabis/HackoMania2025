@@ -1,18 +1,19 @@
+import type React from "react"
 import { Card, CardContent, Typography } from "@mui/material"
 
 interface DonationCardProps {
-  amount: string
+  value: string | number
   label: string
 }
 
-export function DonationCard({ amount, label }: DonationCardProps) {
+export const DonationCard: React.FC<DonationCardProps> = ({ value, label }) => {
   return (
-    <Card sx={{ minWidth: 275, textAlign: "center", mb: 2 }}>
+    <Card sx={{ mb: 2 }}>
       <CardContent>
-        <Typography variant="h4" component="div" sx={{ fontWeight: "bold", mb: 1 }}>
-          {amount}
+        <Typography variant="h4" component="div" align="center" sx={{ fontWeight: "bold", mb: 1 }}>
+          {typeof value === "number" && value % 1 === 0 ? value : value}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" align="center">
           {label}
         </Typography>
       </CardContent>

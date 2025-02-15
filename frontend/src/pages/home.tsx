@@ -1,21 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Box,
-  ThemeProvider,
-  CssBaseline,
-  Card,
-  CardContent,
-} from "@mui/material"
+import { AppBar, Toolbar, IconButton, Typography, Box, ThemeProvider, CssBaseline } from "@mui/material"
 import MenuIcon from "@mui/icons-material/Menu"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import { createTheme } from "@mui/material/styles"
-import { addictionsTabData } from "@/constants/constants"
+import { TestimonialCard } from "../components/TestimonialCard"
+import { DonationCard } from "../components/DonationCard"
+import { type AddictionTab, addictionsTabData } from "../constants/constants"
 
 const theme = createTheme({
   palette: {
@@ -28,14 +20,42 @@ const theme = createTheme({
   },
 })
 
-const tabData = [
-  { category: "Smoking", amount: "$1,048.64", count: 205 },
-  { category: "Alcohol", amount: "$2,356.12", count: 312 },
-  { category: "Drugs", amount: "$3,789.50", count: 178 },
-]
-
 export default function Page() {
   const [activeTab, setActiveTab] = useState(0)
+
+  const renderTabContent = (tab: AddictionTab) => (
+    <>
+      <DonationCard value={`$${tab.donation_amount.toFixed(2)}`} label="Total Donation Pool" />
+
+      <DonationCard value={tab.number} label="Warriors on our Program" />
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+          {tab.title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {tab.subtitle}
+        </Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+          Programs to help {tab.category.toLowerCase()} addicts:
+        </Typography>
+        <ul style={{ paddingLeft: "20px", margin: 0 }}>
+          <li>Counselling Sessions</li>
+          <li>Sharing Sessions</li>
+          <li>Redeem gifts to guide you on your journey</li>
+        </ul>
+      </Box>
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+          Testimonials from our Warriors:
+        </Typography>
+        {tab.imageSrc.map((src, index) => (
+          <TestimonialCard key={index} imageSrc={src} />
+        ))}
+      </Box>
+    </>
+  )
 
   return (
     <ThemeProvider theme={theme}>
@@ -66,7 +86,7 @@ export default function Page() {
           </Toolbar>
         </AppBar>
 
-        {/* Main Content mapped for each addiction */}
+        {/* Main Content */}
         <Box sx={{ px: 2, py: 3 }}>
           {/* Tabs */}
           <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 2 }}>
@@ -94,76 +114,8 @@ export default function Page() {
             XXX has just donated $XXXX!
           </Typography>
 
-          {/* Donation Stats */}
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h4" component="div" align="center" sx={{ fontWeight: "bold", mb: 1 }}>
-                {tabData[activeTab].amount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                Total Donation Pool
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Typography variant="h4" component="div" align="center" sx={{ fontWeight: "bold", mb: 1 }}>
-                {tabData[activeTab].count}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                Warriors on our Program
-              </Typography>
-            </CardContent>
-          </Card>
-
-          {/* Programs Section */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Programs to help addicts:
-            </Typography>
-            <ul style={{ paddingLeft: "20px", margin: 0 }}>
-              <li>Counselling Sessions</li>
-              <li>Sharing Sessions</li>
-              <li>Redeem gifts to guide you on your journey</li>
-            </ul>
-          </Box>
-
-          {/* Testimonials */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-              Testimonials from our Warriors:
-            </Typography>
-            <Box sx={{ position: "relative", paddingTop: "56.25%", borderRadius: 2, overflow: "hidden" }}>
-              <Box
-                component="img"
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%7B3A7A57D7-3709-428A-A232-15F783970920%7D-Jd8MAhDpANR4lUeVTJQxMf9xfnVuc6.png"
-                alt="Testimonial video thumbnail"
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  p: 2,
-                  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)",
-                }}
-              >
-                <Typography variant="body2" color="white">
-                  Damn this shit fire
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
+          {/* Tab Content */}
+          {renderTabContent(addictionsTabData[activeTab])}
         </Box>
       </Box>
     </ThemeProvider>
