@@ -27,9 +27,9 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4";
+const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/{id}";
 const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf";
-const PRIVATE_KEY_PATH = "/Users/justintimo/HackoMania2025/backend/private.key";
+const PRIVATE_KEY_PATH = "/home/crabis/HackoMania2025/HackoMania2025/backend/private.key";
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
 let client: any;
@@ -51,6 +51,9 @@ let client: any;
 // GET Wallets
 app.get("/wallets", async (req: Request, res: Response): Promise<void> => {
   try {
+    const { amount, userId } = req.body;
+    // Construct the dynamic sender wallet address
+    const SENDER_WALLET_ADDRESS = `https://ilp.interledger-test.dev/${userId}`; 
     console.log("📨 Fetching wallet addresses...");
     const sendingWalletAddress = await client.walletAddress.get({
       url: SENDER_WALLET_ADDRESS,
@@ -121,11 +124,12 @@ app.post("/incoming-payment", async (req: Request, res: Response): Promise<void>
 // POST Create a Quote
 app.post("/quote", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { amount } = req.body;
-    console.log("📨 Creating quote for amount:", amount);
-
+    console.log(req.body)  
+    const { amount, id } = req.body;
+    // Construct the dynamic sender wallet address
+    const SENDER_WALLET_ADDRESS = `https://ilp.interledger-test.dev/${id}`; 
     const sendingWalletAddress = await client.walletAddress.get({
-      url: SENDER_WALLET_ADDRESS,
+    url: SENDER_WALLET_ADDRESS,  // ✅ Now uses the user-provided ID dynamically
     });
     const receivingWalletAddress = await client.walletAddress.get({
       url: RECEIVER_WALLET_ADDRESS,
@@ -213,9 +217,13 @@ app.post("/outgoing-payment", async (req: Request, res: Response): Promise<void>
   try {
     console.log("📨 Creating outgoing payment...");
     console.log("Request body:", req.body);
+    // Construct the dynamic sender wallet address
+    
+    const quote: Quote = req.body.quote;
+    const SENDER_WALLET_ADDRESS = req.body.quote.walletId; 
+    console.log(SENDER_WALLET_ADDRESS)
 
     const sendingWalletAddress: WalletAddress = await client.walletAddress.get({ url: SENDER_WALLET_ADDRESS });
-    const quote: Quote = req.body.quote;
 
     const outgoingPaymentGrant = await client.grant.request(
       {
@@ -269,7 +277,7 @@ app.post("/finish-payment", async (req: Request, res: Response): Promise<void> =
   try {
     const { walletId, quoteId } = req.body;
     console.log("📨 Finishing payment for wallet:", walletId);
-
+    const SENDER_WALLET_ADDRESS = walletId; 
     if (!walletId || !quoteId) {
       throw new Error("Wallet ID and Quote ID are required");
     }
@@ -297,7 +305,7 @@ app.post("/finish-payment", async (req: Request, res: Response): Promise<void> =
     }
 
     console.log("✅ Grant finalized successfully");
-
+    console.log(SENDER_WALLET_ADDRESS)
     const sendingWalletAddress: WalletAddress = await client.walletAddress.get({ 
       url: SENDER_WALLET_ADDRESS 
     });

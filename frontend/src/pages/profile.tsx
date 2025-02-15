@@ -114,8 +114,8 @@ const ProfilePage = () => {
       {/* Navigation Bar with Logo & Title */}
       <Box sx={{ display: 'flex', alignItems: 'center', padding: 2 }}>
         <MenuDrawer />
-        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
-        <Typography variant="h6" sx={{ marginLeft: 1, fontWeight: 'bold', color: 'black' }}>
+        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 5 }} />
+        <Typography variant="h6" sx={{ marginLeft: 0, fontWeight: 'bold', color: 'black' }}>
           BreakFree
         </Typography>
       </Box>
