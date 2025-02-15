@@ -27,7 +27,7 @@ export function TestimonialCard({ imageSrc }: TestimonialCardProps) {
           left: 0,
           right: 0,
           p: 2,
-          background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)",
+          background: "linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.65) 100%)",
         }}
       >
         <Typography variant="body2" color="white">

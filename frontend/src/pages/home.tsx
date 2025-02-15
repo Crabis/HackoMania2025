@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { 
   AppBar, Toolbar, IconButton, Typography, Box, 
-  Button, Avatar, ThemeProvider, CssBaseline 
+  Button, Avatar, ThemeProvider, CssBaseline,
+  Card, CardContent, Divider, CardActionArea 
 } from "@mui/material";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Link } from "react-router-dom";
 import MenuDrawer from "../components/navbar";
 import { createTheme } from "@mui/material/styles";
+import { createClient } from "@supabase/supabase-js";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { TestimonialCard } from "../components/TestimonialCard";
 import { DonationCard } from "../components/DonationCard";
 import { type AddictionTab, addictionsTabData } from "../constants/constants";
-import Logo from "frontend/public/images/logo.png";
+import Logo from "frontend/public/images/logo.png"; // Ensure correct import
 import supabase from '../services/supabaseClient'
+
 
 const theme = createTheme({
   palette: {
@@ -23,19 +27,11 @@ const theme = createTheme({
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
 });
-
 interface DonationTotals {
   Smoking: number;
   Alcohol: number;
   Drugs: number;
 }
-
-interface WarriorCounts {
-  Smoking: number;
-  Alcohol: number;
-  Drugs: number;
-}
-
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [user, setUser] = useState<any>(null);
@@ -45,11 +41,11 @@ export default function HomePage() {
     Alcohol: 0, 
     Drugs: 0 
   });
-  const [warriorCounts, setWarriorCounts] = useState<WarriorCounts>({
-    Smoking: 0,
-    Alcohol: 0,
-    Drugs: 0
-  });
+  const programLinks = [
+    { title: "Counselling Sessions", url: "/counselling" },
+    { title: "Sharing Sessions", url: "/sharing" },
+    { title: "Redeem Gifts", url: "/redeem" }
+  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -85,12 +81,16 @@ export default function HomePage() {
           throw error;
         }
     
+        console.log('Raw Donations Data', data);
+    
+        // Initialize donation totals
         const newTotals = {
           Smoking: 0,
           Alcohol: 0,
           Drugs: 0
         };
     
+        // Sum amounts by category
         data.forEach(donation => {
           const category = donation.category as keyof typeof newTotals;
           const amount = parseFloat(donation.amount);
@@ -105,77 +105,144 @@ export default function HomePage() {
       }
     };
 
-    const fetchWarriorCounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("warriors")
-          .select("addict_type")
-          
-        if (error) {
-          console.error('Error fetching warrior counts:', error);
-          throw error;
-        }
-
-        const counts = {
-          Smoking: 0,
-          Alcohol: 0,
-          Drugs: 0
-        };
-
-        data.forEach(warrior => {
-          const type = warrior.addict_type.charAt(0).toUpperCase() + warrior.addict_type.slice(1);
-          if (type in counts) {
-            counts[type as keyof WarriorCounts]++;
-          }
-        });
-
-        setWarriorCounts(counts);
-      } catch (error) {
-        console.error('Error fetching warrior counts:', error);
-      }
-    };
 
     fetchUser();
     fetchDonations();
-    fetchWarriorCounts();
   }, []);
+
 
   const renderTabContent = (tab: AddictionTab) => (
     <>
-      <DonationCard
-        value={
-          <Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>
-            {`$${(donationTotals[tab.category as keyof DonationTotals] || 0).toFixed(2)}`}
-          </Typography>
-        }
-        label="Total Donation Pool"
-      />
-      <DonationCard
-        value={
-          <Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>
-            {warriorCounts[tab.category as keyof WarriorCounts]}
-          </Typography>
-        }
-        label="Warriors on our Program"
-      />
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-          {tab.title}
+      {/* ✅ Always Side-by-Side Layout */}
+      <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mt: 2 }}>
+        <Card
+            sx={{
+            width: "100%", // ✅ Ensures it takes full width
+            maxWidth: "400px", // ✅ Controls width
+            padding: "12px",
+            maxHeight: "130px",
+            display: "flex",
+            flexDirection: "row", // ✅ Always side-by-side
+            flexWrap: "nowrap",
+            alignItems: "center", // ✅ Ensures both sections match height
+            textAlign: "center",
+            borderRadius: 1,
+            border: "1px solid rgba(155, 155, 155, 0.8)",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)"
+            }}
+        >
+            {/* ✅ Donation Pool Section */}
+            <CardContent
+            sx={{
+                flex: 1,
+                padding: "8px",
+                minWidth: "50%",
+                display: "flex", // ✅ Enables flexbox inside content
+                flexDirection: "column",
+                alignItems: "center", // ✅ Centers items vertically
+                justifyContent: "center", // ✅ Ensures full vertical alignment
+                height: "100%", // ✅ Forces equal height
+            }}
+            >
+            <Typography sx={{ fontSize: "2.5rem", color: "#539BFF", fontFamily: "'Poppins', sans-serif" }}>
+                {`$${(donationTotals[tab.category as keyof DonationTotals] || 0).toFixed(2)}`}
+            </Typography>
+            <Typography sx={{ fontSize: "0.8rem", letterSpacing: "1px", color: "#000", fontFamily: "'Poppins', sans-serif" }}>
+                Total Donation Pool
+            </Typography>
+            </CardContent>
+
+            {/* ✅ Vertical Grey Divider */}
+            <Divider orientation="vertical" flexItem sx={{ backgroundColor: "rgba(155, 155, 155, 0.5)", height: "100%" }} />
+
+            {/* ✅ Warriors Count Section */}
+            <CardContent
+            sx={{
+                flex: 1,
+                padding: "23px",
+                minWidth: "50%",
+                display: "flex", // ✅ Enables flexbox inside content
+                flexDirection: "column",
+                alignItems: "center", // ✅ Centers items vertically
+                justifyContent: "center", // ✅ Ensures full vertical alignment
+                height: "100%", // ✅ Forces equal height
+            }}
+            >
+            <Typography sx={{ fontSize: "2.5rem", color: "#539BFF", fontFamily: "'Poppins', sans-serif" }}>
+                {tab.number}
+            </Typography>
+            <Typography sx={{ fontSize: "0.8rem", letterSpacing: "1px", color: "#000", fontFamily: "'Poppins', sans-serif" }}>
+                Warriors
+            </Typography>
+            </CardContent>
+        </Card>
+        </Box>
+
+  
+      {/* ✅ Program Title & Subtitle */}
+        <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, mt: 2, mb: 0.5, color: "#000", fontFamily: "'Poppins', sans-serif" }}>
+                {tab.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {tab.subtitle}
-        </Typography>
-        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-          Programs to help {tab.category.toLowerCase()} addicts:
-        </Typography>
-        <ul style={{ paddingLeft: "20px", margin: 0 }}>
-          <li>Counselling Sessions</li>
-          <li>Sharing Sessions</li>
-          <li>Redeem gifts to guide you on your journey</li>
-        </ul>
-      </Box>
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+        <Box
+            sx={{
+                mt: 0,
+                padding: "16px", // ✅ Adds spacing around text
+                backgroundColor: "rgb(255, 255, 255)", // ✅ Light grey background
+                borderRadius: "8px", // ✅ Rounded corners
+                boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)", // ✅ Subtle shadow
+                border: "1px solid rgba(155, 155, 155, 0.8)",
+            }}
+            >
+            <Typography variant="body1" color="#000" sx={{ mt: 0, fontSize: "0.8rem", fontFamily: "'Poppins', sans-serif" }}>
+                {tab.subtitle}
+            </Typography>
+            </Box>
+
+            {/* ✅ Programs List */}
+            <Typography variant="h6" sx={{ fontWeight: "bold", mt: 1, mb: 0.5, ml: 1, color: "#000000", fontFamily: "'Poppins', sans-serif" }}>
+                Programs to help {tab.category.toLowerCase()} addicts:
+            </Typography>
+            <Box
+            // sx={{
+            //     mt: 0,
+            //     padding: "16px",
+            //     backgroundColor: "rgba(70, 70, 70, 0)", // ✅ Clean white background
+            //     borderRadius: "8px",
+            //     border: "1px solid rgba(0, 0, 0, 0.1)", // ✅ Light border for structure
+            //     boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.05)" // ✅ Light shadow for depth
+            // }}
+            >
+            
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2, mt: 1 }}>
+            {programLinks.map((program, index) => (
+                <Card 
+                key={index} 
+                sx={{ 
+                    borderRadius: 2, 
+                    boxShadow: "0px 4px 10px rgba(0,0,0,0.1)", 
+                    backgroundColor: "#f5f5f5", // ✅ Change background color
+                    border: "1px solid rgba(155, 155, 155, 0.8)",
+                    "&:hover": { backgroundColor: "#e0e0e0" } // ✅ Hover effect
+                }}
+                >
+                <CardActionArea component={Link} to={program.url} sx={{ padding: "2px" }}>
+                    <CardContent sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {/* ✅ Left-Aligned Text */}
+                    <Typography sx={{ fontSize: "0.9rem", fontFamily: "'Poppins', sans-serif" }}>
+                        {program.title}
+                    </Typography>
+                        {/* ✅ Arrow Icon on the Right */}
+                    <ChevronRightIcon sx={{ color: "#555" }} />
+                    </CardContent>
+                    </CardActionArea>
+                    </Card>
+                    ))}
+                    </Box>
+                </Box>
+
+      {/* ✅ Testimonials Section */}
+      <Box sx={{ mt: 1 }}>
+      <Typography variant="h6" sx={{ fontWeight: "bold", mt: 1, mb: 0.5, ml: 1, color: "#000000", fontFamily: "'Poppins', sans-serif" }}>
           Testimonials from our Warriors:
         </Typography>
         {tab.imageSrc.map((src, index) => (
@@ -184,12 +251,17 @@ export default function HomePage() {
       </Box>
     </>
   );
+  
+
+  
+  
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 2 }}>
+      {/* ✅ Updated Navigation Bar */}
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
         <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <MenuDrawer />
@@ -211,7 +283,7 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                <Typography color="inherit" sx={{ mr: 2 }}>
+                <Typography color="inherit" sx={{ mr: 1 }}>
                   {username || "User"}
                 </Typography>
                 <IconButton component={Link} to="/profile">
@@ -225,6 +297,7 @@ export default function HomePage() {
         </Toolbar>
       </AppBar>
 
+      {/* ✅ Addictions Tab Navigation */}
       <Box sx={{ px: 3, py: 0, backgroundColor: "#fff" }}>
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 1 }}>
           {addictionsTabData.map((tab, index) => (
@@ -247,12 +320,13 @@ export default function HomePage() {
         </Box>
       </Box>
 
+      {/* ✅ Background Image + Tab Content */}
       <Box
         sx={{
           flexGrow: 1,
           minHeight: "100vh",
           bgcolor: "background.default",
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${addictionsTabData[activeTab].backgroundImage})`,
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)), url(${addictionsTabData[activeTab].backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -267,3 +341,4 @@ export default function HomePage() {
     </ThemeProvider>
   );
 }
+
