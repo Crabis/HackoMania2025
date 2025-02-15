@@ -14,7 +14,7 @@ import {
   Container,
   CircularProgress
 } from '@mui/material';
-import { deepOrange, deepPurple, blue } from '@mui/material/colors';
+import { deepOrange, deepPurple, green, blue } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
 import MenuDrawer from "../components/navbar"
 
@@ -59,7 +59,7 @@ const ProfilePage = () => {
     fetchUser();
   }, []);
 
-  const updateRole = async (role: 'mentor' | 'guardian' | 'warrior') => {
+  const updateRole = async (role: 'mentor' | 'guardian' | 'warrior' | 'buddy') => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -99,6 +99,9 @@ const ProfilePage = () => {
       case 'guardian':
         return deepOrange[500];
       case 'warrior':
+      
+      case 'buddy':
+        return green[500];
       default:
         return blue[500];
     }
@@ -176,7 +179,7 @@ const ProfilePage = () => {
                   sx={{ 
                     bgcolor: deepPurple[500], 
                     '&:hover': { bgcolor: deepPurple[700] },
-                    minWidth: '120px',
+                    minWidth: '100px',
                     flex: { xs: '1 1 100%', sm: '1 1 0' }
                   }}
                 >
@@ -189,7 +192,7 @@ const ProfilePage = () => {
                   sx={{ 
                     bgcolor: deepOrange[500], 
                     '&:hover': { bgcolor: deepOrange[700] },
-                    minWidth: '120px',
+                    minWidth: '100px',
                     flex: { xs: '1 1 100%', sm: '1 1 0' }
                   }}
                 >
@@ -202,11 +205,24 @@ const ProfilePage = () => {
                   sx={{ 
                     bgcolor: blue[500], 
                     '&:hover': { bgcolor: blue[700] },
-                    minWidth: '120px',
+                    minWidth: '100px',
                     flex: { xs: '1 1 100%', sm: '1 1 0' }
                   }}
                 >
                   {isLoading ? <CircularProgress size={24} /> : 'Warrior'}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => updateRole('buddy')}
+                  disabled={isLoading}
+                  sx={{ 
+                    bgcolor: green[500], 
+                    '&:hover': { bgcolor: green[500] },
+                    minWidth: '100px',
+                    flex: { xs: '1 1 100%', sm: '1 1 0' }
+                  }}
+                >
+                  {isLoading ? <CircularProgress size={24} /> : 'Buddy'}
                 </Button>
               </Stack>
             </Box>
