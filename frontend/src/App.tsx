@@ -8,7 +8,10 @@ import ResetPasswordPage from "./pages/resetpassword";
 import AboutPage from "./pages/about";
 import WarriorHomePage from "./pages/warriorhome";
 import GuardianPanel from "./pages/guardianpage";
-
+import RegisterWarrior from "./pages/buddyregisterwarrior";
+import ViewBuddyWarriors from "./pages/yourwarriorhome";
+import WarriorRegisterBuddy from "./pages/warriorregisterbuddy";
+import { View } from "lucide-react";
 const App: React.FC = () => {
   return (
     <Router>
@@ -23,6 +26,10 @@ const App: React.FC = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/warrior-home" element={<WarriorHomePage />} />
           <Route path="/guardian-panel" element={<GuardianPanel />} />
+          <Route path="/register-warrior-buddy" element={<RegisterWarrior/>} />
+          <Route path="/attached-warrior-home" element={<ViewBuddyWarriors/>} />
+          <Route path="/register-a-buddy" element={<WarriorRegisterBuddy/>} />
+
         </Routes>
       </div>
     </Router>
