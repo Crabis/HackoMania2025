@@ -92,9 +92,9 @@ export default function MenuDrawer() {
   ];
 
   const warriorMenu = [
+    { label: "Warrior Home", path: "/warrior-home" },
     { label: "Register a Buddy", path: "/register-a-buddy"},
     { label: "Volunteer to be a Sponsor", path: "/volunteer-as-sponsor"},
-    { label: "Warrior Home", path: "/warrior-home" },
     // { label: "My Progress", path: "/my-progress" },
   ];
 
@@ -176,7 +176,7 @@ export default function MenuDrawer() {
                 </List>
             )}
             </Box>
-            
+
           {/* Logout Button - Only show if user is logged in */}
           {user && (
             <Box sx={{ mt: "auto", p: 2 }}>

@@ -1,17 +1,23 @@
-import { useState, useEffect } from "react"
-import { AppBar, Toolbar, IconButton, Typography, Box, ThemeProvider, CssBaseline, Button } from "@mui/material"
-import MenuIcon from "@mui/icons-material/Menu"
-import AccountCircleIcon from "@mui/icons-material/AccountCircle"
-import { createTheme } from "@mui/material/styles"
-import { Link, useNavigate } from 'react-router-dom';
-import { TestimonialCard } from "../components/TestimonialCard"
-import { DonationCard } from "../components/DonationCard"
-import { type AddictionTab, addictionsTabData } from "../constants/constants"
-import MenuDrawer from "../components/navbar"
-import { createClient } from "@supabase/supabase-js"
+import { useState, useEffect } from "react";
+import { 
+  AppBar, Toolbar, IconButton, Typography, Box, 
+  Button, Avatar, ThemeProvider, CssBaseline 
+} from "@mui/material";
+import { Link } from "react-router-dom";
+import MenuDrawer from "../components/navbar";
+import { createTheme } from "@mui/material/styles";
+import { createClient } from "@supabase/supabase-js";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { TestimonialCard } from "../components/TestimonialCard";
+import { DonationCard } from "../components/DonationCard";
+import { type AddictionTab, addictionsTabData } from "../constants/constants";
+import Logo from "frontend/public/images/logo.png"; // Ensure correct import
 
 // Initialize Supabase client
-const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU');
+const supabase = createClient(
+  "https://qagsbbilljqjmauhylgo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU"
+);
 
 const theme = createTheme({
   palette: {
@@ -22,21 +28,38 @@ const theme = createTheme({
   typography: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
-})
+});
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState(0)
-  const [user, setUser] = useState<any>(null)
-  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState(0);
+  const [user, setUser] = useState<any>(null);
+  const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data?.user)
-    }
-    
-    fetchUser()
-  }, [])
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !authData?.user) {
+        setUser(null);
+        return;
+      }
+
+      setUser(authData.user);
+
+      // ✅ Fetch additional user details (username) from the "users" table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("username")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (!userError && userData?.username) {
+        setUsername(userData.username);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const renderTabContent = (tab: AddictionTab) => (
     <>
@@ -44,12 +67,10 @@ export default function HomePage() {
         value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{`$${tab.donation_amount.toFixed(2)}`}</Typography>}
         label="Total Donation Pool"
       />
-
       <DonationCard
         value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{tab.number}</Typography>}
         label="Warriors on our Program"
       />
-
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
           {tab.title}
@@ -66,7 +87,6 @@ export default function HomePage() {
           <li>Redeem gifts to guide you on your journey</li>
         </ul>
       </Box>
-
       <Box sx={{ mt: 3 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
           Testimonials from our Warriors:
@@ -76,55 +96,50 @@ export default function HomePage() {
         ))}
       </Box>
     </>
-  )
+  );
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar position="static" color="transparent" elevation={0}>
-        <Toolbar sx={{ mb: 1 }}>
-          <IconButton edge="start" color="inherit" aria-label="menu">
+
+      {/* ✅ Updated Navigation Bar */}
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 2 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <MenuDrawer />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: "left" }}>
-            Recovery Warriors
-          </Typography>
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {!user ? (
               <>
-                <Button
-                  color="inherit"
-                  size="small"
-                  sx={{ mr: 1 }}
-                  component={Link}
-                  to="/login"
-                >
+                <Button color="inherit" size="small" component={Link} to="/login" sx={{ mr: 1 }}>
                   Login
                 </Button>
-                <Button
-                  color="inherit"
-                  size="small"
-                  sx={{ mr: 0 }}
-                  component={Link}
-                  to="/register"
-                >
+                <Button color="inherit" size="small" component={Link} to="/register">
                   Register
                 </Button>
               </>
             ) : (
-              <Typography color="inherit" sx={{ mr: 2 }}>
-                {user.username}
-              </Typography>
-            )}
-            {user && (
-              <IconButton color="inherit" component={Link} to="/profile">
-                <AccountCircleIcon />
-              </IconButton>
+              <>
+                <Typography color="inherit" sx={{ mr: 2 }}>
+                  {username || "User"}
+                </Typography>
+                <IconButton component={Link} to="/profile">
+                  <Avatar sx={{ bgcolor: "#007BFF" }}>
+                    {username?.[0]?.toUpperCase() || <AccountCircleIcon />}
+                  </Avatar>
+                </IconButton>
+              </>
             )}
           </Box>
         </Toolbar>
       </AppBar>
 
+      {/* ✅ Addictions Tab Navigation */}
       <Box sx={{ px: 3, py: 0, backgroundColor: "#fff" }}>
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 1 }}>
           {addictionsTabData.map((tab, index) => (
@@ -147,6 +162,7 @@ export default function HomePage() {
         </Box>
       </Box>
 
+      {/* ✅ Background Image + Tab Content */}
       <Box
         sx={{
           flexGrow: 1,
@@ -165,5 +181,6 @@ export default function HomePage() {
         {renderTabContent(addictionsTabData[activeTab])}
       </Box>
     </ThemeProvider>
-  )
+  );
 }
+

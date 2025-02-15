@@ -16,10 +16,11 @@ import {
 } from '@mui/material';
 import { deepOrange, deepPurple, green, blue } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
-import MenuDrawer from "../components/navbar"
+import MenuDrawer from "../components/navbar";
+import Logo from "frontend/public/images/logo.png";
 
 // Initialize Supabase client
-const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU');
+const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co',   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU");
 
 const ProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ const ProfilePage = () => {
         setError(queryError.message);
       } else {
         setUserUsername(userData?.username || '');
+        setUsername(userData?.username || ''); // Auto-fill username field
         setCurrentRole(userData?.role || null);
       }
       setIsLoading(false);
@@ -99,7 +101,7 @@ const ProfilePage = () => {
       case 'guardian':
         return deepOrange[500];
       case 'warrior':
-      
+        return blue[500];
       case 'buddy':
         return green[500];
       default:
@@ -109,11 +111,21 @@ const ProfilePage = () => {
 
   return (
     <>
-      <MenuDrawer />
+      {/* Navigation Bar with Logo & Title */}
+      <Box sx={{ display: 'flex', alignItems: 'center', padding: 2 }}>
+        <MenuDrawer />
+        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+        <Typography variant="h6" sx={{ marginLeft: 1, fontWeight: 'bold', color: 'black' }}>
+          BreakFree
+        </Typography>
+      </Box>
+
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Card elevation={3}>
           <CardContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              
+              {/* Avatar & Username Display */}
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                 <Avatar
                   sx={{
@@ -147,84 +159,91 @@ const ProfilePage = () => {
                 </Alert>
               )}
 
+              {/* Username Input with Label */}
+              <Typography variant="subtitle1" sx={{ alignSelf: 'flex-start', fontWeight: 'bold' }}>
+                Username:
+              </Typography>
               <TextField
                 fullWidth
-                label="Username"
+                label="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={userUsername || 'Enter your username'}
                 variant="outlined"
                 disabled={isLoading}
               />
 
-              <Typography variant="subtitle1" sx={{ mt: 2 }}>
-                Current Role: {currentRole || 'None'}
+              {/* Current Role Display with Color Matching */}
+              <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 'bold' }}>
+                Current Role:{' '}
+                <span style={{ color: getAvatarColor(currentRole), textTransform: 'capitalize' }}>
+                  {currentRole || 'None'}
+                </span>
               </Typography>
 
+              {/* Role Selection Buttons */}
               <Stack 
-                direction="row" 
-                spacing={2} 
+              sx={{ 
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, auto)' }, // ✅ 2 buttons per row on mobile, 4 in a row on larger screens
+                gap: 2, // ✅ Add spacing between buttons
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '100%',
+                mt: 2
+              }}
+            >
+              <Button
+                variant="contained"
+                onClick={() => updateRole('mentor')}
+                disabled={isLoading}
                 sx={{ 
-                  width: '100%', 
-                  mt: 2,
-                  justifyContent: 'center',
-                  flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                  gap: 2
+                  bgcolor: deepPurple[500], 
+                  '&:hover': { bgcolor: deepPurple[700] },
+                  width: '100%' // ✅ Make buttons fill the grid cell
                 }}
               >
-                <Button
-                  variant="contained"
-                  onClick={() => updateRole('mentor')}
-                  disabled={isLoading}
-                  sx={{ 
-                    bgcolor: deepPurple[500], 
-                    '&:hover': { bgcolor: deepPurple[700] },
-                    minWidth: '100px',
-                    flex: { xs: '1 1 100%', sm: '1 1 0' }
-                  }}
-                >
-                  {isLoading ? <CircularProgress size={24} /> : 'Mentor'}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => updateRole('guardian')}
-                  disabled={isLoading}
-                  sx={{ 
-                    bgcolor: deepOrange[500], 
-                    '&:hover': { bgcolor: deepOrange[700] },
-                    minWidth: '100px',
-                    flex: { xs: '1 1 100%', sm: '1 1 0' }
-                  }}
-                >
-                  {isLoading ? <CircularProgress size={24} /> : 'Guardian'}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => updateRole('warrior')}
-                  disabled={isLoading}
-                  sx={{ 
-                    bgcolor: blue[500], 
-                    '&:hover': { bgcolor: blue[700] },
-                    minWidth: '100px',
-                    flex: { xs: '1 1 100%', sm: '1 1 0' }
-                  }}
-                >
-                  {isLoading ? <CircularProgress size={24} /> : 'Warrior'}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => updateRole('buddy')}
-                  disabled={isLoading}
-                  sx={{ 
-                    bgcolor: green[500], 
-                    '&:hover': { bgcolor: green[500] },
-                    minWidth: '100px',
-                    flex: { xs: '1 1 100%', sm: '1 1 0' }
-                  }}
-                >
-                  {isLoading ? <CircularProgress size={24} /> : 'Buddy'}
-                </Button>
-              </Stack>
+                {isLoading ? <CircularProgress size={24} /> : 'Mentor'}
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={() => updateRole('guardian')}
+                disabled={isLoading}
+                sx={{ 
+                  bgcolor: deepOrange[500], 
+                  '&:hover': { bgcolor: deepOrange[700] },
+                  width: '100%' // ✅ Full width inside grid cell
+                }}
+              >
+                {isLoading ? <CircularProgress size={24} /> : 'Guardian'}
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={() => updateRole('warrior')}
+                disabled={isLoading}
+                sx={{ 
+                  bgcolor: blue[500], 
+                  '&:hover': { bgcolor: blue[700] },
+                  width: '100%'
+                }}
+              >
+                {isLoading ? <CircularProgress size={24} /> : 'Warrior'}
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={() => updateRole('buddy')}
+                disabled={isLoading}
+                sx={{ 
+                  bgcolor: green[500], 
+                  '&:hover': { bgcolor: green[700] },
+                  width: '100%'
+                }}
+              >
+                {isLoading ? <CircularProgress size={24} /> : 'Buddy'}
+              </Button>
+            </Stack>
             </Box>
           </CardContent>
         </Card>
