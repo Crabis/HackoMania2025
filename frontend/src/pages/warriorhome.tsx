@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent, LinearProgress, TextField } from '@mui/material';
+import MenuDrawer from "../components/navbar"
 import supabase from '../services/supabaseClient'; // Ensure correct Supabase import
 
 const WarriorHomePage = () => {
@@ -66,7 +67,9 @@ const WarriorHomePage = () => {
   };
 
   return (
+    
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 5, px: 3 }}>
+      <MenuDrawer />
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
         Welcome, Warrior! 🏆
       </Typography>
