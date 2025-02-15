@@ -17,12 +17,13 @@ import readline from "readline/promises";
 
 const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4/"; // qing rong's
 const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf/"; // yx
+const PRIVATE_KEY = "MC4CAQAwBQYDK2VwBCIEIEz8V45c1o0xEMHokofzXeR9zW8MHHmzl2fg5gbiPjPY" //yx
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
 (async () => {
   const client = await createAuthenticatedClient({
     walletAddressUrl: RECEIVER_WALLET_ADDRESS, // Make sure the wallet address starts with https:// (not $), and has no trailing slashes
-    privateKey: "private.key",
+    privateKey: PRIVATE_KEY,
     keyId: KEY_ID,
   });
 
