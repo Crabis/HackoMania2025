@@ -107,22 +107,22 @@ const GuardianPanel = () => {
     walletId: null
   });
   useEffect(() => {
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        // Handle signed out state
-        console.log('User signed out');
-      } else if (event === 'SIGNED_IN') {
-        // Handle signed in state
-        console.log('User signed in');
-      }
-    });
-  
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  // Listen for auth changes
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      // Handle signed out state
+      console.log('User signed out');
+    } else if (event === 'SIGNED_IN') {
+      // Handle signed in state
+      console.log('User signed in');
+    }
+  });
+
+  // Cleanup subscription on unmount
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
   // Initial load and health check
   useEffect(() => {
     const init = async () => {
@@ -157,38 +157,32 @@ const GuardianPanel = () => {
       
       const { data: donations, error } = await supabase
         .from('donations')
-        .select('amount, target_milestone_id, status')
+        .select('amount, category') // Include category in the query
         .eq('status', 'completed');
-
+  
       if (error) {
-        console.error('Supabase fetch error:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Supabase fetch error:', error);
         throw error;
       }
-
+  
       console.log('Raw donations data:', donations);
-
+  
       const amounts: PoolAmounts = {
         [DonationCategory.SMOKING]: 0,
         [DonationCategory.ALCOHOL]: 0,
         [DonationCategory.DRUGS]: 0
       };
-
+  
       if (donations) {
         donations.forEach(donation => {
           const amount = parseFloat(String(donation.amount));
-          if (!isNaN(amount)) {
-            amounts[DonationCategory.SMOKING] += amount / 3;
-            amounts[DonationCategory.ALCOHOL] += amount / 3;
-            amounts[DonationCategory.DRUGS] += amount / 3;
+          const category = donation.category as DonationCategory;
+          if (category && amounts.hasOwnProperty(category)) {
+            amounts[category] += amount; // Add full amount to the specific category
           }
         });
       }
-
+  
       console.log('Calculated pool amounts:', amounts);
       setPoolAmounts(amounts);
     } catch (error) {
@@ -363,15 +357,16 @@ const getQuote = async (amount: string): Promise<Quote> => {
       if (paymentResult.success || paymentResult.message?.includes('Payment sent successfully')) {
         // Use the original amount for the database (in euros)
         const donationData = {
-          amount: parseFloat(donationAmount), // This will be the correct euro amount
-          is_anonymous: isAnonymous,
-          status: 'completed',
-          donation_date: new Date().toISOString(),
-          guardian_id: null,
-          target_milestone_id: null,
-          target_participant_id: null,
-          transaction_id: paymentState.quote.id
-        };
+            amount: parseFloat(donationAmount),
+            is_anonymous: isAnonymous,
+            status: 'completed',
+            donation_date: new Date().toISOString(),
+            guardian_id: null,
+            target_milestone_id: null,
+            target_participant_id: null,
+            transaction_id: paymentState.quote.id,
+            category: selectedCategory // Add the selected category
+          };
   
         console.log('Attempting Supabase insertion with data:', donationData);
   
