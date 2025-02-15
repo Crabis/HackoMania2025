@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
 // Initialize Supabase client
 const supabase = createClient('https://qagsbbilljqjmauhylgo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU');
@@ -9,12 +10,13 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate(); // For redirection
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    setError(null); // Clear any previous errors
-    setIsLoading(true); // Start loading spinner
+    setError(null);
+    setIsLoading(true);
 
     // Sign up the user
     const { data, error } = await supabase.auth.signUp({
@@ -22,12 +24,13 @@ const RegisterPage = () => {
       password,
     });
 
-    setIsLoading(false); // End loading spinner
+    setIsLoading(false);
 
     if (error) {
-      setError(error.message); // Display error message
+      setError(error.message);
     } else {
       alert('Check your email for the confirmation link!');
+      navigate("/login");
     }
   };
 
