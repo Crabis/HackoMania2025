@@ -6,12 +6,11 @@ import {
 import { Link } from "react-router-dom";
 import MenuDrawer from "../components/navbar";
 import { createTheme } from "@mui/material/styles";
-import { createClient } from "@supabase/supabase-js";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { TestimonialCard } from "../components/TestimonialCard";
 import { DonationCard } from "../components/DonationCard";
 import { type AddictionTab, addictionsTabData } from "../constants/constants";
-import Logo from "frontend/public/images/logo.png"; // Ensure correct import
+import Logo from "frontend/public/images/logo.png";
 import supabase from '../services/supabaseClient'
 
 const theme = createTheme({
@@ -24,11 +23,19 @@ const theme = createTheme({
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
 });
+
 interface DonationTotals {
   Smoking: number;
   Alcohol: number;
   Drugs: number;
 }
+
+interface WarriorCounts {
+  Smoking: number;
+  Alcohol: number;
+  Drugs: number;
+}
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [user, setUser] = useState<any>(null);
@@ -37,6 +44,11 @@ export default function HomePage() {
     Smoking: 0, 
     Alcohol: 0, 
     Drugs: 0 
+  });
+  const [warriorCounts, setWarriorCounts] = useState<WarriorCounts>({
+    Smoking: 0,
+    Alcohol: 0,
+    Drugs: 0
   });
 
   useEffect(() => {
@@ -73,16 +85,12 @@ export default function HomePage() {
           throw error;
         }
     
-        console.log('Raw Donations Data', data);
-    
-        // Initialize donation totals
         const newTotals = {
           Smoking: 0,
           Alcohol: 0,
           Drugs: 0
         };
     
-        // Sum amounts by category
         data.forEach(donation => {
           const category = donation.category as keyof typeof newTotals;
           const amount = parseFloat(donation.amount);
@@ -97,9 +105,39 @@ export default function HomePage() {
       }
     };
 
+    const fetchWarriorCounts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("warriors")
+          .select("addict_type")
+          
+        if (error) {
+          console.error('Error fetching warrior counts:', error);
+          throw error;
+        }
+
+        const counts = {
+          Smoking: 0,
+          Alcohol: 0,
+          Drugs: 0
+        };
+
+        data.forEach(warrior => {
+          const type = warrior.addict_type.charAt(0).toUpperCase() + warrior.addict_type.slice(1);
+          if (type in counts) {
+            counts[type as keyof WarriorCounts]++;
+          }
+        });
+
+        setWarriorCounts(counts);
+      } catch (error) {
+        console.error('Error fetching warrior counts:', error);
+      }
+    };
 
     fetchUser();
     fetchDonations();
+    fetchWarriorCounts();
   }, []);
 
   const renderTabContent = (tab: AddictionTab) => (
@@ -113,7 +151,11 @@ export default function HomePage() {
         label="Total Donation Pool"
       />
       <DonationCard
-        value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{tab.number}</Typography>}
+        value={
+          <Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>
+            {warriorCounts[tab.category as keyof WarriorCounts]}
+          </Typography>
+        }
         label="Warriors on our Program"
       />
       <Box sx={{ mt: 3 }}>
@@ -147,7 +189,6 @@ export default function HomePage() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      {/* ✅ Updated Navigation Bar */}
       <AppBar position="static" color="transparent" elevation={1} sx={{ px: 2 }}>
         <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -184,7 +225,6 @@ export default function HomePage() {
         </Toolbar>
       </AppBar>
 
-      {/* ✅ Addictions Tab Navigation */}
       <Box sx={{ px: 3, py: 0, backgroundColor: "#fff" }}>
         <Box sx={{ display: "flex", borderBottom: 1, borderColor: "divider", mb: 1 }}>
           {addictionsTabData.map((tab, index) => (
@@ -207,7 +247,6 @@ export default function HomePage() {
         </Box>
       </Box>
 
-      {/* ✅ Background Image + Tab Content */}
       <Box
         sx={{
           flexGrow: 1,
@@ -228,4 +267,3 @@ export default function HomePage() {
     </ThemeProvider>
   );
 }
-
