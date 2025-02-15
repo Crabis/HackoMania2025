@@ -15,8 +15,9 @@ import {
 } from "@interledger/open-payments";
 import readline from "readline/promises";
 
-const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4/"; // qing rong's
-const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf/"; // yx
+
+const SENDER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/7c5b53a4"; // qing rong's
+const RECEIVER_WALLET_ADDRESS = "https://ilp.interledger-test.dev/836c1bdf"; // yx
 const PRIVATE_KEY_PATH = "/home/crabis/HackoMania2025/HackoMania2025/backend/private.key" //yx
 const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
 
@@ -198,7 +199,6 @@ const KEY_ID = "ee699895-7946-4498-8594-901b58d642cf";
       "Please navigate to the following URL to accept the interaction from the sending wallet:"
     );
     console.log(outgoingPaymentGrant.interact.redirect);
-    process.exit();
   } 
   
   console.log("\nStep 5: got finalized outgoing payment grant", outgoingPaymentGrant);
