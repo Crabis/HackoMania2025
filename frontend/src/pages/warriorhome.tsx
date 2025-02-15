@@ -20,12 +20,11 @@ const WarriorHomePage = () => {
         const { data: warriorRecords, error } = await supabase
           .from('warriors')
           .select('addict_type, days_clean')
-          .eq('test', '12');
+          .eq('uuid', data.user.id);
 
         if (error) {
           console.error(error);
         } else {
-          console.log("Fetched warrior data:", warriorRecords); // Log the data to console
           setWarriorData(warriorRecords || []);
         }
       }
@@ -63,12 +62,6 @@ const WarriorHomePage = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 5 }}>
       <Typography variant="h5">Welcome, Warrior!</Typography>
 
-      {/* Display fetched data for debugging */}
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="body1">Fetched Warrior Data:</Typography>
-        <pre>{JSON.stringify(warriorData, null, 2)}</pre> {/* Print out the fetched data */}
-      </Box>
-
       {/* Display progress bars for each addiction type */}
       {warriorData.length === 0 ? (
         <Typography variant="body1" sx={{ mt: 3 }}>No addiction data available.</Typography>
@@ -80,7 +73,7 @@ const WarriorHomePage = () => {
           return (
             <Card key={index} sx={{ mt: 3, width: '100%', maxWidth: '500px' }}>
               <CardContent>
-                <Typography variant="h6">{warrior.addict_type} Addiction</Typography>
+                <Typography variant="h6">{warrior.addict_type} addiction</Typography>
                 <LinearProgress
                   variant="determinate"
                   value={(warriorPoints / 20) * 100}
