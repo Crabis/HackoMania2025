@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { AppBar, Toolbar, IconButton, Typography, Box, ThemeProvider, CssBaseline } from "@mui/material"
+import { AppBar, Toolbar, IconButton, Typography, Box, ThemeProvider, CssBaseline, Button } from "@mui/material"
 import MenuIcon from "@mui/icons-material/Menu"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import { createTheme } from "@mui/material/styles"
+import { Link } from 'react-router-dom';
 import { TestimonialCard } from "../components/TestimonialCard"
 import { DonationCard } from "../components/DonationCard"
 import { type AddictionTab, addictionsTabData } from "../constants/constants"
@@ -61,6 +62,15 @@ export default function Page() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "background.default" }}>
+        {/* Status Bar */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1, bgcolor: "white" }}>
+          <Typography variant="body2">9:41</Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {[...Array(3)].map((_, i) => (
+              <Box key={i} sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: "black" }} />
+            ))}
+          </Box>
+        </Box>
 
         {/* App Bar */}
         <AppBar position="static" color="transparent" elevation={0}>
@@ -69,11 +79,32 @@ export default function Page() {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: "center" }}>
-              Recovering Warriors
+              Title
             </Typography>
-            <IconButton color="inherit">
-              <AccountCircleIcon />
-            </IconButton>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Button
+                color="inherit"
+                size="small"
+                sx={{ mr: 1 }}
+                component={Link}  // Use the 'Link' component for navigation
+                to="/login"       // Navigate to the '/login' route
+                >
+                Login
+            </Button>
+
+            <Button
+                color="inherit"
+                size="small"
+                sx={{ mr: 1 }}
+                component={Link}  // Use the 'Link' component for navigation
+                to="/register"    // Navigate to the '/register' route
+                >
+                Register
+            </Button>
+              <IconButton color="inherit">
+                <AccountCircleIcon />
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
 
