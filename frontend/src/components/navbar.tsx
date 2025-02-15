@@ -94,6 +94,7 @@ export default function MenuDrawer() {
   const warriorMenu = [
     { label: "Warrior Home", path: "/warrior-home" },
     { label: "Register a Buddy", path: "/register-a-buddy"},
+    { label: "View Sessions", path: "/sessions-warrior" },
     { label: "Volunteer to be a Sponsor", path: "/volunteer-as-sponsor"},
     // { label: "My Progress", path: "/my-progress" },
   ];

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Box, Button, Card, CardContent, Typography, TextField, MenuItem, Snackbar } from '@mui/material';
 import supabase from '../services/supabaseClient';
+import MenuDrawer from "../components/navbar";
+import Logo from "frontend/public/images/logo.png";
 
 const MentorHomePage = () => {
   const [addictType, setAddictType] = useState('');
@@ -7,6 +10,8 @@ const MentorHomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Fetch current user
   useEffect(() => {
@@ -34,17 +39,14 @@ const MentorHomePage = () => {
     fetchUser();
   }, []);
 
-  const handleAddictTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setAddictType(e.target.value);
-  };
-
-  const handleTimestampChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTimestamp(e.target.value);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   const handleCreateSession = async () => {
     if (!addictType || !timestamp || !user) {
-      alert('Please fill in both fields and ensure you are logged in!');
+      setSnackbarMessage('Please fill in all fields and ensure you are logged in!');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -54,7 +56,7 @@ const MentorHomePage = () => {
         .from('sessions')
         .insert([
           {
-            mentor_id: user.id, // Use the fetched user id
+            mentor_id: user.id,
             addict_type: addictType,
             timestamp: timestamp,
           },
@@ -64,52 +66,87 @@ const MentorHomePage = () => {
         throw error;
       }
 
-      alert('Session created successfully!');
+      setSnackbarMessage('Session created successfully!');
       setAddictType('');
       setTimestamp('');
     } catch (error) {
       console.error('Error creating session:', error);
-      alert('Error creating session.');
+      setSnackbarMessage('Error creating session.');
     } finally {
       setIsLoading(false);
+      setSnackbarOpen(true);
     }
   };
 
   return (
-    <div>
-      <h1>Mentor Home</h1>
-      {user ? (
-        <>
-          <p>Welcome, {username || user.email}!</p>
-          <div>
-            <label htmlFor="addictType">Select Addict Type:</label>
-            <select id="addictType" value={addictType} onChange={handleAddictTypeChange}>
-              <option value="">Select...</option>
-              <option value="alcohol">Alcohol</option>
-              <option value="drugs">Drugs</option>
-              <option value="smoking">Smoking</option>
-              {/* Add more options as needed */}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="timestamp">Select Timestamp:</label>
-            <input
-              type="datetime-local"
-              id="timestamp"
-              value={timestamp}
-              onChange={handleTimestampChange}
-            />
-          </div>
-          <div>
-            <button onClick={handleCreateSession} disabled={isLoading}>
-              {isLoading ? 'Creating Session...' : 'Create Session'}
-            </button>
-          </div>
-        </>
-      ) : (
-        <p>Please log in to create a session.</p>
-      )}
-    </div>
+    <>
+      <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, position: 'absolute', top: 0, left: 0 }}>
+        <MenuDrawer />
+        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+        <Typography variant="h6" sx={{ marginLeft: 1, fontWeight: 'bold', color: 'black' }}>
+          BreakFree
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 10, px: 3 }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
+          Welcome, Mentor {username || 'Warrior'}! 🎓
+        </Typography>
+
+        {user ? (
+          <Card sx={{ width: '100%', maxWidth: '600px', p: 3, mt: 2 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>Create a Session</Typography>
+
+              <TextField
+                select
+                label="Select Addict Type"
+                value={addictType}
+                onChange={(e) => setAddictType(e.target.value)}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                <MenuItem value="alcohol">Alcohol</MenuItem>
+                <MenuItem value="drugs">Drugs</MenuItem>
+                <MenuItem value="smoking">Smoking</MenuItem>
+              </TextField>
+
+              <TextField
+                type="datetime-local"
+                label="Select Timestamp"
+                value={timestamp}
+                onChange={(e) => setTimestamp(e.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+
+              <Button
+                variant="contained"
+                color="secondary"
+                fullWidth
+                onClick={handleCreateSession}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating Session...' : 'Create Session'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Typography variant="body1" sx={{ textAlign: 'center', color: 'gray' }}>
+            Please log in to create a session.
+          </Typography>
+        )}
+      </Box>
+
+      {/* Snackbar for success or error messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+      />
+    </>
   );
 };
 

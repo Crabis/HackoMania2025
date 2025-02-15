@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
+import { Box, Button, Card, CardContent, Typography, LinearProgress, Snackbar } from '@mui/material';
 import supabase from '../services/supabaseClient';
+import MenuDrawer from "../components/navbar";
+import Logo from "frontend/public/images/logo.png";
 
 const SessionsWarriorPage = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null); // To store the logged-in user
-  const [username, setUsername] = useState<string>(''); // To store the logged-in user's username
-  const [viewAllSessions, setViewAllSessions] = useState<boolean>(false); // To toggle between "Your Sessions" and "All Sessions"
+  const [user, setUser] = useState<any>(null);
+  const [username, setUsername] = useState<string>('');
+  const [viewAllSessions, setViewAllSessions] = useState<boolean>(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar state for success message
+  const [snackbarMessage, setSnackbarMessage] = useState<string>(''); // Snackbar message state
 
-  // Fetch user and their role
   useEffect(() => {
     const fetchUser = async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -21,15 +25,13 @@ const SessionsWarriorPage = () => {
 
       setUser(authData.user);
 
-      // Fetch the user's details from the 'users' table
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('username, role') // assuming the role is stored in the 'users' table
+        .select('username, role')
         .eq('id', authData.user.id)
         .single();
 
       if (!userError && userData) {
-        console.log('User data fetched:', userData);
         setUsername(userData.username);
       } else {
         console.error('Error fetching user details:', userError);
@@ -39,31 +41,24 @@ const SessionsWarriorPage = () => {
     fetchUser();
   }, []);
 
-  // Fetch sessions if the user is a warrior (for "Your Sessions")
   useEffect(() => {
-    if (!user) return; // Skip if user is not authenticated
+    if (!user) return;
 
     const fetchSessions = async () => {
-      console.log('Fetching sessions for warrior ID:', user.id);
-
       setIsLoading(true);
 
       try {
-        // Fetch session details from the attendance table
         const { data: attendanceData, error: attendanceError } = await supabase
           .from('attendance')
           .select('session_id, status')
           .eq('warrior_id', user.id);
 
-        if (attendanceError) {
-          throw attendanceError;
-        }
+        if (attendanceError) throw attendanceError;
 
-        // For each session_id in the attendance data, fetch session details
         const sessionDetailsPromises = attendanceData.map(async (attendance) => {
           const { data: sessionData, error: sessionError } = await supabase
             .from('sessions')
-            .select('session_id, mentor_id, timestamp, location, addict_type') // Added addict_type
+            .select('session_id, mentor_id, timestamp, location, addict_type')
             .eq('session_id', attendance.session_id)
             .single();
 
@@ -72,7 +67,6 @@ const SessionsWarriorPage = () => {
             return null;
           }
 
-          // Fetch the mentor's username based on mentor_id
           const { data: mentorData, error: mentorError } = await supabase
             .from('users')
             .select('username')
@@ -84,18 +78,16 @@ const SessionsWarriorPage = () => {
             return null;
           }
 
-          // Combine session details with mentor username and addict_type
           return {
             ...sessionData,
             mentor_username: mentorData?.username,
             status: attendance.status,
+            isJoined: true,
           };
         });
 
-        // Wait for all session details to be fetched
         const sessionDetails = await Promise.all(sessionDetailsPromises);
 
-        // Filter out any null results
         setSessions(sessionDetails.filter((session) => session !== null));
       } catch (error) {
         console.error('Error fetching sessions:', error);
@@ -104,31 +96,25 @@ const SessionsWarriorPage = () => {
       }
     };
 
-    // Fetch sessions for "Your Sessions"
     if (!viewAllSessions) {
       fetchSessions();
     }
-  }, [user?.id, viewAllSessions]); // Fetch sessions only when the user is available or their ID changes or when the tab view changes
+  }, [user?.id, viewAllSessions]);
 
-  // Fetch all sessions (for "All Sessions")
   useEffect(() => {
     if (viewAllSessions) {
       const fetchAllSessions = async () => {
-        console.log('Fetching all sessions');
-
         setIsLoading(true);
 
         try {
-          // Fetch all sessions from the sessions table
           const { data: allSessionsData, error: allSessionsError } = await supabase
             .from('sessions')
-            .select('session_id, mentor_id, timestamp, location, addict_type'); // Added addict_type
+            .select('session_id, mentor_id, timestamp, location, addict_type');
 
           if (allSessionsError) {
             throw allSessionsError;
           }
 
-          // For each session, fetch mentor username
           const allSessionDetailsPromises = allSessionsData.map(async (session) => {
             const { data: mentorData, error: mentorError } = await supabase
               .from('users')
@@ -141,16 +127,27 @@ const SessionsWarriorPage = () => {
               return null;
             }
 
+            // Check if the user has already joined this session
+            const { data: attendanceData, error: attendanceError } = await supabase
+              .from('attendance')
+              .select('session_id')
+              .eq('session_id', session.session_id)
+              .eq('warrior_id', user.id)
+              .single();
+
+            if (attendanceError) {
+              console.error('Error checking attendance:', attendanceError);
+            }
+
             return {
               ...session,
               mentor_username: mentorData?.username,
+              isJoined: attendanceData ? true : false, // If data is found, user has joined
             };
           });
 
-          // Wait for all session details to be fetched
           const allSessionDetails = await Promise.all(allSessionDetailsPromises);
 
-          // Filter out any null results
           setSessions(allSessionDetails.filter((session) => session !== null));
         } catch (error) {
           console.error('Error fetching all sessions:', error);
@@ -161,48 +158,154 @@ const SessionsWarriorPage = () => {
 
       fetchAllSessions();
     }
-  }, [viewAllSessions]); // Fetch all sessions only when the tab is set to "All Sessions"
+  }, [viewAllSessions]);
+
+  const handleJoinSession = async (sessionId: string) => {
+    const { error } = await supabase
+      .from('attendance')
+      .insert([
+        { session_id: sessionId, warrior_id: user.id, status: 'pending' }
+      ]);
+
+    if (error) {
+      console.error('Error joining session:', error);
+    } else {
+      setSessions((prevSessions) =>
+        prevSessions.map((session) =>
+          session.session_id === sessionId ? { ...session, isJoined: true } : session
+        )
+      );
+      setSnackbarMessage('Successfully joined the session!'); // Set custom message for joining
+      setSnackbarOpen(true); // Show success Snackbar
+    }
+  };
+
+  const handleLeaveSession = async (sessionId: string) => {
+    const { error } = await supabase
+      .from('attendance')
+      .delete()
+      .eq('session_id', sessionId)
+      .eq('warrior_id', user.id);
+
+    if (error) {
+      console.error('Error leaving session:', error);
+    } else {
+      setSessions((prevSessions) =>
+        prevSessions.filter((session) => session.session_id !== sessionId)
+      );
+      setSnackbarMessage('Successfully left the session!'); // Set custom message for leaving
+      setSnackbarOpen(true); // Show success Snackbar
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   if (isLoading) {
-    return <div>Loading sessions...</div>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <Typography variant="h6">Loading sessions...</Typography>
+      </Box>
+    );
   }
 
   return (
-    <div>
-      <h1>Sessions List</h1>
-      
-      {/* Tab buttons */}
-      <div>
-        <button onClick={() => setViewAllSessions(false)} disabled={!user}>Your Sessions</button>
-        <button onClick={() => setViewAllSessions(true)}>All Sessions</button>
-      </div>
+    <>
+      <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, position: 'absolute', top: 0, left: 0 }}>
+        <MenuDrawer />
+        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+        <Typography variant="h6" sx={{ marginLeft: 1, fontWeight: 'bold', color: 'black' }}>
+          BreakFree
+        </Typography>
+      </Box>
 
-      {/* Display sessions */}
-      {sessions.length === 0 ? (
-        <p>No sessions available.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Mentor Username</th>
-              <th>Addict Type</th>
-              <th>Timestamp</th>
-              <th>Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((session) => (
-              <tr key={session.session_id}>
-                <td>{session.mentor_username}</td>
-                <td>{session.addict_type}</td>
-                <td>{new Date(session.timestamp).toLocaleString()}</td>
-                <td>{session.location}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 10, px: 3 }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
+          Welcome, {username || 'Warrior'}! 🏆
+        </Typography>
+
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          <Button
+            variant={viewAllSessions ? 'outlined' : 'contained'}
+            color="primary"
+            onClick={() => setViewAllSessions(false)}
+            sx={{ width: '50%' }}
+          >
+            Your Sessions
+          </Button>
+          <Button
+            variant={viewAllSessions ? 'contained' : 'outlined'}
+            color="primary"
+            onClick={() => setViewAllSessions(true)}
+            sx={{ width: '50%' }}
+          >
+            All Sessions
+          </Button>
+        </Box>
+
+        {sessions.length === 0 ? (
+          <Typography variant="body1" sx={{ textAlign: 'center', color: 'gray' }}>
+            No sessions available.
+          </Typography>
+        ) : (
+          sessions.map((session) => (
+            <Card key={session.session_id} sx={{ mb: 3, width: '100%', maxWidth: '600px', p: 3 }}>
+              <CardContent>
+                <Typography variant="h6">{session.mentor_username}'s Session</Typography>
+                <Typography variant="body2" sx={{ mt: 1, color: 'gray' }}>
+                  {new Date(session.timestamp).toLocaleString()}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Location: {session.location}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, color: 'blue' }}>
+                  Addict Type: {session.addict_type}
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={session.status === 'Completed' ? 100 : 50}
+                  sx={{ mt: 2, height: 10, borderRadius: 5 }}
+                />
+                {!viewAllSessions && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Status: {session.status}
+                  </Typography>
+                )}
+                {viewAllSessions && !session.isJoined && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleJoinSession(session.session_id)}
+                    sx={{ mt: 2 }}
+                  >
+                    Join Session
+                  </Button>
+                )}
+                {!viewAllSessions && session.isJoined && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleLeaveSession(session.session_id)}
+                    sx={{ mt: 2 }}
+                  >
+                    Leave Session
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </Box>
+
+      {/* Snackbar for success message */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage} // Display the custom message
+      />
+    </>
   );
 };
 
