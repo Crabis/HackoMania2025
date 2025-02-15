@@ -12,12 +12,7 @@ import { TestimonialCard } from "../components/TestimonialCard";
 import { DonationCard } from "../components/DonationCard";
 import { type AddictionTab, addictionsTabData } from "../constants/constants";
 import Logo from "frontend/public/images/logo.png"; // Ensure correct import
-
-// Initialize Supabase client
-const supabase = createClient(
-  "https://qagsbbilljqjmauhylgo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU"
-);
+import supabase from '../services/supabaseClient'
 
 const theme = createTheme({
   palette: {
@@ -29,11 +24,20 @@ const theme = createTheme({
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
 });
-
+interface DonationTotals {
+  Smoking: number;
+  Alcohol: number;
+  Drugs: number;
+}
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [donationTotals, setDonationTotals] = useState<DonationTotals>({ 
+    Smoking: 0, 
+    Alcohol: 0, 
+    Drugs: 0 
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -46,7 +50,6 @@ export default function HomePage() {
 
       setUser(authData.user);
 
-      // ✅ Fetch additional user details (username) from the "users" table
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("username")
@@ -58,13 +61,55 @@ export default function HomePage() {
       }
     };
 
+    const fetchDonations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("donations")
+          .select("category, amount")
+          .eq('status', 'completed');
+    
+        if (error) {
+          console.error('Supabase fetch error', error);
+          throw error;
+        }
+    
+        console.log('Raw Donations Data', data);
+    
+        // Initialize donation totals
+        const newTotals = {
+          Smoking: 0,
+          Alcohol: 0,
+          Drugs: 0
+        };
+    
+        // Sum amounts by category
+        data.forEach(donation => {
+          const category = donation.category as keyof typeof newTotals;
+          const amount = parseFloat(donation.amount);
+          if (category in newTotals) {
+            newTotals[category] += amount;
+          }
+        });
+    
+        setDonationTotals(newTotals);
+      } catch (error) {
+        console.error('Error fetching donations:', error);
+      }
+    };
+
+
     fetchUser();
+    fetchDonations();
   }, []);
 
   const renderTabContent = (tab: AddictionTab) => (
     <>
       <DonationCard
-        value={<Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>{`$${tab.donation_amount.toFixed(2)}`}</Typography>}
+        value={
+          <Typography sx={{ fontSize: "2rem", color: "#007BFF", fontWeight: "bold" }}>
+            {`$${(donationTotals[tab.category as keyof DonationTotals] || 0).toFixed(2)}`}
+          </Typography>
+        }
         label="Total Donation Pool"
       />
       <DonationCard
