@@ -356,7 +356,7 @@ export default function HomePage() {
               {tab.category}
             </Box>
           ))}
-          <Box sx={{ px: 2, py: 1 }}>{">"}</Box>
+          {/* <Box sx={{ px: 2, py: 1 }}>{">"}</Box> */}
         </Box>
       </Box>
 

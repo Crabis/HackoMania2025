@@ -95,7 +95,6 @@ export default function MenuDrawer() {
     { label: "Warrior Home", path: "/warrior-home" },
     { label: "Register a Buddy", path: "/register-a-buddy"},
     { label: "View Sessions", path: "/sessions-warrior" },
-    { label: "Volunteer to be a Sponsor", path: "/volunteer-as-sponsor"},
     { label: "Rewards", path: "/rewards" },
     // { label: "My Progress", path: "/my-progress" },
   ];
