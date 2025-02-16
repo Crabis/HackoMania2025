@@ -33,6 +33,7 @@ import { createTheme } from "@mui/material/styles"
 import supabase from '../services/supabaseClient'
 import Logo from "frontend/public/images/logo.png";
 import MenuDrawer from "../components/navbar";
+import { User } from "lucide-react";
 
 const API_BASE_URL = 'http://localhost:3001';
 
@@ -396,7 +397,7 @@ const getQuote = async (amount: string): Promise<Quote> => {
             is_anonymous: isAnonymous,
             status: 'completed',
             donation_date: new Date().toISOString(),
-            guardian_id: null,
+            guardian_id: user.id,
             target_milestone_id: null,
             target_participant_id: null,
             transaction_id: paymentState.quote.id,

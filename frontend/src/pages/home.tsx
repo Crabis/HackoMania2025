@@ -15,6 +15,7 @@ import { DonationCard } from "../components/DonationCard";
 import { type AddictionTab, addictionsTabData } from "../constants/constants";
 import Logo from "frontend/public/images/logo.png"; // Ensure correct import
 import supabase from '../services/supabaseClient'
+import DonationsFeed from "../components/DonationsFeed";
 
 
 const theme = createTheme({
@@ -177,7 +178,9 @@ export default function HomePage() {
             </CardContent>
         </Card>
         </Box>
-
+        <Box sx={{ mt: 3 }}>
+        <DonationsFeed category={tab.category} />
+        </Box>
   
       {/* ✅ Program Title & Subtitle */}
         <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, mt: 2, mb: 0.5, color: "#000", fontFamily: "'Poppins', sans-serif" }}>
