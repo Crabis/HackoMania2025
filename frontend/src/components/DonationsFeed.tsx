@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Card, CardContent } from "@mui/material";
 import { createClient } from "@supabase/supabase-js";
 
 // ✅ Initialize Supabase
@@ -8,55 +7,62 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3NiYmlsbGpxam1hdWh5bGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTczNzAsImV4cCI6MjA1NTE3MzM3MH0.5R8oQ9Zh_w6R7cDDhAU9xKZlMOk2jU3cCgO72uu91qU"
 );
 
-// ✅ Define the `Donation` type properly
+// ✅ Define the `Donation` type
 interface Donation {
   id: string;
   amount: number;
   donation_date: string;
   guardian_id: string;
   category: string;
-  username: string; // Retrieved from `users` table
+  username: string;
 }
 
-// ✅ Define the component with a properly typed `category` prop
+// ✅ Define the component
 const DonationsFeed: React.FC<{ category: string }> = ({ category }) => {
-  const [donations, setDonations] = useState<Donation[]>([]);
+  const [donation, setDonation] = useState<Donation | null>(null);
+  const [loading, setLoading] = useState(true); // ✅ Track loading state
 
   useEffect(() => {
-    // ✅ Fetch latest donations & donor usernames
-    const fetchDonations = async () => {
+    let isMounted = true; // ✅ Prevent state updates if component unmounts
+
+    // ✅ Reset state when category changes
+    setDonation(null);
+    setLoading(true);
+
+    const fetchDonation = async () => {
       const { data, error } = await supabase
         .from("donations")
-        .select("id, amount, donation_date, guardian_id, category") // ✅ Fetch only necessary fields
+        .select("id, amount, donation_date, guardian_id, category")
         .eq("category", category)
         .order("donation_date", { ascending: false })
-        .limit(10);
+        .limit(1)
+        .single();
 
-      if (error) {
-        console.error("Error fetching donations:", error);
+      if (error || !data) {
+        if (isMounted) {
+          setDonation(null);
+          setLoading(false);
+        }
         return;
       }
 
-      // ✅ Fetch donor usernames from the `users` table
-      const donationsWithUsers: Donation[] = await Promise.all(
-        data.map(async (donation) => {
-          const { data: userData, error: userError } = await supabase
-            .from("users")
-            .select("username")
-            .eq("id", donation.guardian_id)
-            .single();
+      // ✅ Fetch donor username
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("username")
+        .eq("id", data.guardian_id)
+        .single();
 
-          return {
-            ...donation,
-            username: userError ? "Anonymous" : userData?.username || "Anonymous",
-          };
-        })
-      );
-
-      setDonations(donationsWithUsers); // ✅ Now TypeScript knows the structure
+      if (isMounted) {
+        setDonation({
+          ...data,
+          username: userError ? "Anonymous" : userData?.username || "Anonymous",
+        });
+        setLoading(false);
+      }
     };
 
-    fetchDonations(); // Initial fetch
+    fetchDonation();
 
     // ✅ Real-time listener for new donations
     const donationSubscription = supabase
@@ -67,65 +73,68 @@ const DonationsFeed: React.FC<{ category: string }> = ({ category }) => {
         async (payload) => {
           const newDonation = payload.new;
 
-          // ✅ Fetch donor username from `users` table
+          // ✅ Fetch donor username
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("username")
-            .eq("id", newDonation.id)
+            .eq("id", newDonation.guardian_id)
             .single();
 
-          // ✅ Ensure all required properties exist
-          const formattedDonation: Donation = {
-            id: newDonation.id,
-            amount: parseFloat(newDonation.amount || "0"),
-            donation_date: newDonation.donation_date,
-            guardian_id: newDonation.id,
-            category: newDonation.category,
-            username: userError ? "Anonymous" : userData?.username || "Anonymous",
-          };
-
-          setDonations((prev) => [formattedDonation, ...prev]); // ✅ Update UI with new donation
+          if (isMounted) {
+            setDonation({
+              id: newDonation.id,
+              amount: parseFloat(newDonation.amount || "0"),
+              donation_date: newDonation.donation_date,
+              guardian_id: newDonation.guardian_id,
+              category: newDonation.category,
+              username: userError ? "Anonymous" : userData?.username || "Anonymous",
+            });
+          }
         }
       )
       .subscribe();
 
     return () => {
-      donationSubscription.unsubscribe(); // ✅ Cleanup on component unmount
+      isMounted = false; // ✅ Prevent state updates after unmount
+      donationSubscription.unsubscribe();
     };
-  }, [category]); // ✅ Fetch data again if category changes
+  }, [category]); // ✅ Depend on category changes
 
   return (
-    <Box sx={{ mt: 3, display: "grid", gap: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: "bold", color: "#007BFF" }}>
-        Recent Donations in {category}
-      </Typography>
-
-      {donations.map((donation) => (
-        <Card
-          key={donation.id}
-          sx={{
-            borderRadius: 2,
-            boxShadow: "0px 4px 8px rgba(0,0,0,0.1)",
-            padding: 2,
-          }}
-        >
-          <CardContent
-            sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-          >
-            <Typography sx={{ fontSize: "1rem", fontWeight: "bold" }}>
-              {donation.username}
-            </Typography>
-            <Typography sx={{ fontSize: "1.2rem", color: "#007BFF" }}>
-              ${donation.amount.toFixed(2)}
-            </Typography>
-          </CardContent>
-        </Card>
-      ))}
-    </Box>
-  );
+    <div style={{ marginTop: "16px", padding: "0 16px" }}>
+      {/* ✅ Left-Aligned Title */}
+      <h3 style={{ fontWeight: "bold", color: "#000000", textAlign: "left" }}>
+        Most Recent Donation in {category}:
+      </h3>
+  
+      {/* ✅ Centered Donation Message */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        flexDirection: "column", 
+        height: "20vh", // Adjust height to center message
+        textAlign: "center" // Ensures text is centered
+      }}>
+        {loading ? (
+          <p style={{ fontSize: "2rem", color: "#777" }}>Loading...</p>
+        ) : donation ? (
+          <p style={{ fontSize: "2rem", color: "#000", fontWeight: "bold" }}>
+            {donation.username} has just donated ${donation.amount.toFixed(2)}!
+          </p>
+        ) : (
+          <p style={{ fontSize: "1.5rem", color: "#777" }}>
+            No recent donations yet.
+          </p>
+        )}
+      </div>
+    </div>
+  );  
 };
 
 export default DonationsFeed;
+
+
 
 
 

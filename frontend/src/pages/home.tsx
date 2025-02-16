@@ -114,6 +114,9 @@ export default function HomePage() {
 
   const renderTabContent = (tab: AddictionTab) => (
     <>
+        <Box sx={{ mt: 3, alignItems: "center" }}>
+        <DonationsFeed category={tab.category} />
+        </Box>  
       {/* ✅ Always Side-by-Side Layout */}
       <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mt: 2 }}>
         <Card
@@ -178,9 +181,7 @@ export default function HomePage() {
             </CardContent>
         </Card>
         </Box>
-        <Box sx={{ mt: 3 }}>
-        <DonationsFeed category={tab.category} />
-        </Box>
+        
   
       {/* ✅ Program Title & Subtitle */}
         <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, mt: 2, mb: 0.5, color: "#000", fontFamily: "'Poppins', sans-serif" }}>
