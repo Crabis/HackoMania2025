@@ -76,6 +76,16 @@ const AboutPage = () => {
         "Contribute to resource library",
         "Participate in emergency support"
       ]
+    },
+    {
+      title: "Buddies",
+      description: "As a Buddy attached to a Warrior, you'll be able to:",
+      points: [
+        "Help Warriors remain accountable through their recovery journey",
+        "Verify their daily check-ins and milestones",
+        "Provide encouragement and emotional support",
+        "Connect Warriors with additional resources when needed"
+      ]
     }
   ];
 
@@ -172,9 +182,9 @@ const AboutPage = () => {
         <Typography variant="h4" gutterBottom>
           Platform Roles
         </Typography>
-        <Grid container spacing={4}>
+        <Grid container spacing={2}>
           {roles.map((role, index) => (
-            <Grid item xs={12} md={4} key={index}>
+            <Grid item xs={12} sm={6} md={3} key={index}>
               <Card sx={{ height: '100%' }}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom>
