@@ -537,7 +537,7 @@ const getQuote = async (amount: string): Promise<Quote> => {
                     label="Donation Amount"
                     type="number"
                     InputProps={{
-                      startAdornment: '€',
+                      startAdornment: '$',
                     }}
                     value={donationAmount}
                     onChange={(e) => setDonationAmount(e.target.value)}
