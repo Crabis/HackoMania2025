@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, LinearProgress, Alert, Chip, Divider, AppBar, Toolbar } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, LinearProgress, Alert, Chip, Divider, AppBar, Toolbar } from '@mui/material';
 import MenuDrawer from "../components/navbar";
 import supabase from '../services/supabaseClient';
 import Logo from "frontend/public/images/logo.png";
@@ -106,6 +106,37 @@ const ViewBuddyWarriors = () => {
   const acceptedWarriors = buddyWarriors.filter(w => w.status === 'accepted');
   const otherRequests = buddyWarriors.filter(w => ['rejected', 'cancelled'].includes(w.status));
 
+  const handleReport = async (uuid: string, addictType: string) => {
+    try {
+      setLoading(true);
+  
+      const { error } = await supabase
+        .from('warriors')
+        .update({ days_clean: 0 })
+        .eq('uuid', uuid)
+        .eq('addict_type', addictType);
+  
+      if (error) throw error;
+  
+      setWarriorAddictions((prevState) => {
+        const updatedAddictions = { ...prevState };
+        updatedAddictions[uuid] = updatedAddictions[uuid].map((addiction) =>
+          addiction.uuid === uuid && addiction.addict_type === addictType
+            ? { ...addiction, days_clean: 0 }
+            : addiction
+        );
+        return updatedAddictions;
+      });
+  
+      setError(null); 
+    } catch (err) {
+      console.error('Error reporting warrior:', err);
+      setError('Failed to report the warrior');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
@@ -202,14 +233,27 @@ const ViewBuddyWarriors = () => {
                           <Typography variant="body2">
                             • {addiction.addict_type.charAt(0).toUpperCase() + addiction.addict_type.slice(1)}
                           </Typography>
+                          
                           <LinearProgress
                             variant="determinate"
                             value={progress}
                             sx={{ mt: 1, mb: 1, height: 8, borderRadius: 4 }}
                           />
-                          <Typography variant="body2" color="text.secondary">
-                            {addiction.days_clean} days clean (Goal: {addiction.goal_weeks} weeks)
-                          </Typography>
+
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {addiction.days_clean} days clean (Goal: {addiction.goal_weeks} weeks)
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button variant="outlined" color="error" size="small" onClick={() => handleReport(addiction.uuid, addiction.addict_type)}>
+                                Report
+                              </Button>
+                              <Button variant="outlined" color="success" size="small">
+                                Verify
+                              </Button>
+                            </Box>
+                          </Box>
                         </Box>
                       );
                     })
