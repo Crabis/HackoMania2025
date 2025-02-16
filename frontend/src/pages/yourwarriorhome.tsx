@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, LinearProgress, Alert, Chip, Divider } from '@mui/material';
+import { Box, Typography, Card, CardContent, LinearProgress, Alert, Chip, Divider, AppBar, Toolbar } from '@mui/material';
 import MenuDrawer from "../components/navbar";
 import supabase from '../services/supabaseClient';
 import Logo from "frontend/public/images/logo.png";
@@ -108,20 +108,17 @@ const ViewBuddyWarriors = () => {
 
   return (
     <>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        padding: 2, 
-        position: 'absolute',
-        top: 0,
-        left: 0
-      }}>
-        <MenuDrawer />
-        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
-        <Typography variant="h6" sx={{ marginLeft: 1, fontWeight: 'bold', color: 'black' }}>
-          BreakFree
-        </Typography>
-      </Box>
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <MenuDrawer />
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+          </Toolbar>
+        </AppBar>
 
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 10, p: 2 }}>
         <Typography variant="h4" component="h1" gutterBottom textAlign="center" sx={{ mb: 4 }}>

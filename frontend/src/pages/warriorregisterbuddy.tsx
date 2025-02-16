@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Card, CardContent, LinearProgress, Alert, Chip, Divider } from '@mui/material';
+import { Box, Typography, TextField, Button, Card, CardContent, LinearProgress, Alert, Chip, Divider, AppBar, Toolbar } from '@mui/material';
 import supabase from '../services/supabaseClient';
+import MenuDrawer from '../components/navbar';
+import Logo from "frontend/public/images/logo.png";
 
 interface BuddyRequest {
   buddy_id: number;
@@ -210,6 +212,18 @@ const WarriorRegisterBuddy = () => {
   };
 
   return (
+    <>
+    <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <MenuDrawer />
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+          </Toolbar>
+        </AppBar>
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4, p: 2 }}>
       <Typography variant="h4" component="h1" gutterBottom textAlign="center">
         Manage Buddy Connections
@@ -330,6 +344,7 @@ const WarriorRegisterBuddy = () => {
         </CardContent>
       </Card>
     </Box>
+  </>
   );
 };
 

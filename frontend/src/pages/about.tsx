@@ -12,6 +12,8 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  Toolbar,
+  AppBar
 } from '@mui/material';
 import MenuDrawer from "../components/navbar"
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -20,6 +22,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SupportIcon from '@mui/icons-material/Support';
+import Logo from "frontend/public/images/logo.png";
 
 const AboutPage = () => {
   const features = [
@@ -78,7 +81,17 @@ const AboutPage = () => {
 
   return (
     <>
-      <MenuDrawer />
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <MenuDrawer />
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+          </Toolbar>
+        </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
         {/* Hero Section */}
         <Box sx={{ mb: 6, textAlign: 'center' }}>

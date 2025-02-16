@@ -12,7 +12,9 @@ import {
   TextField,
   Button,
   Container,
-  CircularProgress
+  CircularProgress,
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import { deepOrange, deepPurple, green, blue } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
@@ -112,13 +114,17 @@ const ProfilePage = () => {
   return (
     <>
       {/* Navigation Bar with Logo & Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', padding: 2 }}>
-        <MenuDrawer />
-        <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 5 }} />
-        <Typography variant="h6" sx={{ marginLeft: 0, fontWeight: 'bold', color: 'black' }}>
-          BreakFree
-        </Typography>
-      </Box>
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <MenuDrawer />
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+          </Toolbar>
+        </AppBar>
 
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Card elevation={3}>

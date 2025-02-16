@@ -261,7 +261,7 @@ export default function HomePage() {
       <CssBaseline />
 
       {/* ✅ Updated Navigation Bar */}
-      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+      <AppBar position="static" color="transparent" elevation={1} sx={{ borderBottom: "1px solid rgba(0, 0, 0, 0.2)"}}>
         <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <MenuDrawer />

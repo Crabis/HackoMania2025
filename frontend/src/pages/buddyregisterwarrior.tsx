@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Card, CardContent, LinearProgress, Alert, Chip } from '@mui/material';
+import { Box, Typography, TextField, Button, Card, CardContent, LinearProgress, Alert, Chip, AppBar, Toolbar, } from '@mui/material';
 import supabase from '../services/supabaseClient';
+import Logo from "frontend/public/images/logo.png";
+import MenuDrawer from '../components/navbar';
 
 interface WarriorData {
   addict_id: number;
@@ -186,6 +188,19 @@ const RegisterWarrior = () => {
   };
 
   return (
+    <>
+      <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
+        <Toolbar sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <MenuDrawer />
+            <img src={Logo} alt="BreakFree Logo" style={{ height: 40, marginLeft: 10 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", ml: 1, color: "black" }}>
+              BreakFree
+            </Typography>
+          </Box>
+          </Toolbar>
+        </AppBar>
+
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
       <Typography variant="h4" component="h1" gutterBottom textAlign="center">
         Find a Warrior to Support
@@ -294,6 +309,7 @@ const RegisterWarrior = () => {
         </Card>
       )}
     </Box>
+    </>
   );
 };
 

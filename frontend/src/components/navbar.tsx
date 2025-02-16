@@ -78,7 +78,6 @@ export default function MenuDrawer() {
   const commonMenuOptions = [
     { label: "Home", path: "/" },
     { label: "About", path: "/about" },
-    { label: "Contact", path: "/contact" },
   ];
 
   // Role-specific menus (customize as needed)
@@ -89,7 +88,6 @@ export default function MenuDrawer() {
 
   const guardianMenu = [
     { label: "Guardian Panel", path: "/guardian-panel" },
-    { label: "Student Reports", path: "/student-reports" },
   ];
 
   const warriorMenu = [
