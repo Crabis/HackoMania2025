@@ -48,68 +48,104 @@ export default function HomePage() {
     { title: "Redeem Gifts", url: "/redeem" }
   ];
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
+  const fetchUser = async () => {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
 
-      if (authError || !authData?.user) {
-        setUser(null);
-        return;
+    if (authError || !authData?.user) {
+      setUser(null);
+      return;
+    }
+
+    setUser(authData.user);
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("username")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (!userError && userData?.username) {
+      setUsername(userData.username);
+    }
+  };
+
+  // ✅ Function to Fetch & Track Real-Time Donations
+  const fetchDonations = async (category: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("donations")
+        .select("category, amount")
+        .eq("status", "completed")
+        .eq("category", category);
+
+      if (error) {
+        console.error("Supabase fetch error", error);
+        throw error;
       }
 
-      setUser(authData.user);
+      console.log("Raw Donations Data", data);
 
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("username")
-        .eq("id", authData.user.id)
-        .single();
+      const newTotals: DonationTotals = {
+        Smoking: 0,
+        Alcohol: 0,
+        Drugs: 0,
+      };
 
-      if (!userError && userData?.username) {
-        setUsername(userData.username);
-      }
-    };
-
-    const fetchDonations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("donations")
-          .select("category, amount")
-          .eq('status', 'completed');
-    
-        if (error) {
-          console.error('Supabase fetch error', error);
-          throw error;
+      data.forEach((donation) => {
+        const cat = donation.category as keyof DonationTotals;
+        const amount = parseFloat(donation.amount);
+        if (cat in newTotals) {
+          newTotals[cat] += amount;
         }
-    
-        console.log('Raw Donations Data', data);
-    
-        // Initialize donation totals
-        const newTotals = {
-          Smoking: 0,
-          Alcohol: 0,
-          Drugs: 0
-        };
-    
-        // Sum amounts by category
-        data.forEach(donation => {
-          const category = donation.category as keyof typeof newTotals;
-          const amount = parseFloat(donation.amount);
-          if (category in newTotals) {
-            newTotals[category] += amount;
-          }
-        });
-    
-        setDonationTotals(newTotals);
-      } catch (error) {
-        console.error('Error fetching donations:', error);
-      }
-    };
+      });
 
+      setDonationTotals(newTotals);
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+    }
+  };
 
-    fetchUser();
-    fetchDonations();
+  // ✅ `useEffect` to Track Donations Based on Active Tab
+  useEffect(() => {
+    fetchUser(); // Fetch user on mount
   }, []);
+
+  useEffect(() => {
+    const category = addictionsTabData[activeTab].category;
+    fetchDonations(category); // Fetch donations when category changes
+
+    // ✅ Real-time listener for new donations
+    const donationSubscription = supabase
+      .channel("donations")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "donations" },
+        async (payload) => {
+          console.log("New donation detected:", payload.new);
+
+          const newDonation = payload.new;
+
+          if (newDonation.status !== "completed") return; // ✅ Ignore incomplete donations
+
+          setDonationTotals((prevTotals) => {
+            const updatedTotals = { ...prevTotals };
+            const cat = newDonation.category as keyof DonationTotals;
+            const amount = parseFloat(newDonation.amount);
+
+            if (cat in updatedTotals) {
+              updatedTotals[cat] += amount;
+            }
+
+            return updatedTotals;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      donationSubscription.unsubscribe();
+    };
+  }, [activeTab]);
 
 
   const renderTabContent = (tab: AddictionTab) => (
