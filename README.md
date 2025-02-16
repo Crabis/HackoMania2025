@@ -13,7 +13,7 @@ A platform designed to support addicts in their recovery journey through donatio
 The backend is built using Node.js with Express.js, handling the core functionality and API integration for supporting addiction recovery. To run the backend:
 
 1. Install dependencies:
-   npm install
+``` npm install
 
 ## Frontend
 
