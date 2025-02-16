@@ -19,6 +19,7 @@ interface WarriorAddiction {
   days_clean: number;
   goal_weeks: number;
   username: string;
+  is_verified: boolean;  // Add this field to track verification status
 }
 
 const ViewBuddyWarriors = () => {
@@ -65,7 +66,11 @@ const ViewBuddyWarriors = () => {
           if (addictError) throw addictError;
           
           if (addictions) {
-            addictionData[buddy.warrior_uuid] = addictions;
+            // Initialize is_verified field for each addiction
+            addictionData[buddy.warrior_uuid] = addictions.map((addiction) => ({
+              ...addiction,
+              is_verified: false, // Initially set is_verified to false
+            }));
           }
         }
 
@@ -137,6 +142,18 @@ const ViewBuddyWarriors = () => {
     }
   };
 
+  const handleVerify = (uuid: string, addictType: string) => {
+    setWarriorAddictions((prevState) => {
+      const updatedAddictions = { ...prevState };
+      updatedAddictions[uuid] = updatedAddictions[uuid].map((addiction) =>
+        addiction.uuid === uuid && addiction.addict_type === addictType
+          ? { ...addiction, is_verified: true } // Mark addiction as verified
+          : addiction
+      );
+      return updatedAddictions;
+    });
+  };
+
   return (
     <>
       <AppBar position="static" color="transparent" elevation={1} sx={{ px: 0 }}>
@@ -148,8 +165,8 @@ const ViewBuddyWarriors = () => {
               BreakFree
             </Typography>
           </Box>
-          </Toolbar>
-        </AppBar>
+        </Toolbar>
+      </AppBar>
 
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 10, p: 2 }}>
         <Typography variant="h4" component="h1" gutterBottom textAlign="center" sx={{ mb: 4 }}>
@@ -232,6 +249,7 @@ const ViewBuddyWarriors = () => {
                         <Box key={addiction.addict_id} sx={{ mb: 2 }}>
                           <Typography variant="body2">
                             • {addiction.addict_type.charAt(0).toUpperCase() + addiction.addict_type.slice(1)}
+                            {addiction.is_verified && ' ✅'} {/* Display verified tick */}
                           </Typography>
                           
                           <LinearProgress
@@ -242,56 +260,30 @@ const ViewBuddyWarriors = () => {
 
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="body2" color="text.secondary">
-                              {addiction.days_clean} days clean (Goal: {addiction.goal_weeks} weeks)
+                              {addiction.days_clean} days clean (Goal: {addiction.goal_weeks * 7} days)
                             </Typography>
-                            
                             <Box sx={{ display: 'flex', gap: 1 }}>
                               <Button variant="outlined" color="error" size="small" onClick={() => handleReport(addiction.uuid, addiction.addict_type)}>
                                 Report
                               </Button>
-                              <Button variant="outlined" color="success" size="small">
+                              {!addiction.is_verified && (
+                              <Button variant="contained" color="primary" onClick={() => handleVerify(warrior.warrior_uuid, addiction.addict_type)}>
                                 Verify
                               </Button>
-                            </Box>
+                            )}
+                            </Box>                            
                           </Box>
                         </Box>
                       );
                     })
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      No active recovery goals set
+                      No addictions data available.
                     </Typography>
                   )}
                 </CardContent>
               </Card>
             ))}
-
-            {/* Past Requests Section */}
-            {otherRequests.length > 0 && (
-              <Card sx={{ mb: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Past Requests
-                  </Typography>
-                  {otherRequests.map((warrior) => (
-                    <Box key={warrior.buddy_id} sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography>{warrior.warrior_username}</Typography>
-                        <Chip 
-                          label={warrior.status}
-                          size="small"
-                          color={getStatusChipColor(warrior.status) as any}
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Last updated: {new Date(warrior.timestamp).toLocaleDateString()}
-                      </Typography>
-                      <Divider sx={{ mt: 1 }} />
-                    </Box>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
           </>
         )}
       </Box>
