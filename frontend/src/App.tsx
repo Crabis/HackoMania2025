@@ -15,6 +15,8 @@ import { View } from "lucide-react";
 import MentorHomePage from "./pages/mentorhome";
 import SessionsMentorPage from "./pages/sessionsmentor";
 import SessionsWarriorPage from "./pages/sessionswarrior";
+import ManageWarriorsPage from "./pages/managewarriors";
+import RewardsShop from "./pages/rewards";
 
 const App: React.FC = () => {
   return (
@@ -36,6 +38,9 @@ const App: React.FC = () => {
           <Route path="/mentor-home" element={<MentorHomePage />} />
           <Route path="/sessions-mentor" element={<SessionsMentorPage />} />
           <Route path="/sessions-warrior" element={<SessionsWarriorPage />} />
+          <Route path="/manage-warriors" element={<ManageWarriorsPage />} />
+          <Route path="/rewards" element={<RewardsShop />} />
+          
         </Routes>
       </div>
     </Router>
