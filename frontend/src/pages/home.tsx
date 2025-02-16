@@ -43,9 +43,8 @@ export default function HomePage() {
     Drugs: 0 
   });
   const programLinks = [
-    { title: "Counselling Sessions", url: "/counselling" },
-    { title: "Sharing Sessions", url: "/sharing" },
-    { title: "Redeem Gifts", url: "/redeem" }
+    { title: "Counselling Sessions", url: "/sessions-warrior" },
+    { title: "Redeem Gifts", url: "/rewards" }
   ];
 
   const fetchUser = async () => {
